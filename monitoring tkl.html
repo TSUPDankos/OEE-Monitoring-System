@@ -1,0 +1,2709 @@
+<!doctype html>
+<html lang="id">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>OEE Monitoring System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="https://apis.google.com/js/api.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    body {
+      box-sizing: border-box;
+    }
+    
+    .animate-fade-in {
+      animation: fadeIn 0.3s ease-in;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    .highlight-yellow {
+      background-color: #fef3c7;
+    }
+
+    .tab-active {
+      background-color: #2563eb;
+      color: white;
+      border-bottom: 3px solid #1e40af;
+    }
+    
+    /* Lebar kolom tabel */
+    .col-no { min-width: 50px; width: 50px; }
+    .col-kode { min-width: 150px; width: 150px; }
+    .col-tkl { min-width: 100px; width: 100px; }
+    .col-dari { min-width: 120px; width: 120px; }
+    .col-sampai { min-width: 120px; width: 120px; }
+    .col-durasi { min-width: 120px; width: 120px; }
+    .col-aktivitas { min-width: 150px; width: 150px; }
+    .col-disposisi { min-width: 150px; width: 150px; }
+    .col-schedule { min-width: 150px; width: 150px; }
+    .col-batchnumber { min-width: 150px; width: 150px; }
+    .col-goodoutput { min-width: 130px; width: 130px; }
+    .col-afkir { min-width: 100px; width: 100px; }
+    .col-linestopmesin { min-width: 150px; width: 150px; }
+    .col-linestopnonmesin { min-width: 180px; width: 180px; }
+    .col-jamkerja { min-width: 120px; width: 120px; }
+    .col-odt { min-width: 120px; width: 120px; }
+    .col-jamkerjaaktual { min-width: 150px; width: 150px; }
+    .col-jamkerjatarget { min-width: 150px; width: 150px; }
+    .col-outputaktual { min-width: 140px; width: 140px; }
+    .col-outputtargethasil { min-width: 180px; width: 180px; }
+    .col-outputtarget365 { min-width: 160px; width: 160px; }
+    .col-batch { min-width: 120px; width: 120px; }
+    .col-satuan { min-width: 120px; width: 120px; }
+    .col-keterangan { min-width: 200px; width: 200px; }
+    .col-minorstop { min-width: 150px; width: 150px; }
+    .col-aksi { min-width: 100px; width: 100px; }
+  </style>
+  <style>@view-transition { navigation: auto; }</style>
+  <script src="/_sdk/data_sdk.js" type="text/javascript"></script>
+ </head>
+ <body class="min-h-full bg-gray-50 font-sans"><!-- Header -->
+  <header class="bg-blue-600 text-white shadow-lg">
+   <div class="w-full px-6 py-4">
+    <div class="flex justify-between items-center">
+     <div>
+      <h1 class="text-2xl font-bold">OEE Monitoring System</h1>
+      <div class="text-sm mt-1"><span id="headerCurrentDate"></span> | <span id="headerCurrentTime"></span>
+      </div>
+     </div>
+    </div>
+   </div>
+  </header><!-- Main Content -->
+  <main class="w-full px-6 py-8"><!-- INPUT SECTION -->
+   <div id="inputSection" class="animate-fade-in">
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+     <h2 class="text-xl font-bold mb-4"><i class="fas fa-edit"></i> Input Data Produksi</h2><!-- Form Input Dasar -->
+     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div><label for="tanggal" class="block text-sm font-medium mb-2">Tanggal</label> <input type="date" id="tanggal" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+      </div>
+      <div><label for="line" class="block text-sm font-medium mb-2">Line Mesin</label>
+       <div class="flex gap-2"><select id="line" onchange="updateMachineOptions()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Line</option> </select> <button onclick="openManageLineModal()" class="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"> <i class="fas fa-cog"></i> </button>
+       </div>
+      </div>
+      <div><label for="jenisMesin" class="block text-sm font-medium mb-2">Jenis Mesin</label>
+       <div class="flex gap-2"><select id="jenisMesin" onchange="updateAllActivityDropdowns()" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Mesin</option> </select> <button onclick="openManageMachineModal()" class="px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"> <i class="fas fa-cog"></i> </button>
+       </div>
+      </div>
+      <div><label for="shift" class="block text-sm font-medium mb-2">Shift</label> <select id="shift" onchange="updateJamKerjaFromShift()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Shift</option> <option value="1">Shift 1: 07:00 - 15:30</option> <option value="2">Shift 2: 15:20 - 22:50</option> <option value="3">Shift 3: 22:40 - 07:10</option> <option value="LS1">LS1: 07:00 - 19:00</option> <option value="LS2">LS2: 19:00 - 07:00</option> </select>
+      </div>
+      <div><label for="operator" class="block text-sm font-medium mb-2">Operator</label> <input type="text" id="operator" class="w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="Nama Operator">
+      </div>
+      <div><label for="speed" class="block text-sm font-medium mb-2">Speed (unit/menit)</label> <input type="number" id="speed" onchange="calculateODT(); recalculateOutputTargetIfNeeded();" class="w-full px-3 py-2 border border-gray-300 rounded-lg" min="0" step="0.1">
+      </div>
+     </div><!-- Tabel Detail Aktivitas -->
+     <div class="overflow-x-auto">
+      <table class="w-full border-collapse border border-gray-300">
+       <thead>
+        <tr class="bg-gray-200">
+         <th class="border border-gray-300 px-2 py-2 text-sm col-no">NO</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-kode">KODE KEGIATAN</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-tkl">JUMLAH TKL</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-dari">DARI</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-sampai">SAMPAI</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-durasi">DURASI (menit)</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-aktivitas">AKTIVITAS</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-disposisi">DISPOSISI NO.WR</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-schedule">NOMOR SCHEDULE</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-batchnumber">BATCH NUMBER</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-goodoutput">GOOD OUTPUT</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-afkir">AFKIR</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-linestopmesin">LINESTOP MESIN</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-linestopnonmesin">LINESTOP NON MESIN</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-jamkerja">JAM KERJA</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-odt">ODT</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-jamkerjaaktual">JAM KERJA AKTUAL</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-jamkerjatarget">JAM KERJA TARGET</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-outputaktual">OUTPUT AKTUAL</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-outputtargethasil">OUTPUT TARGET</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-outputtarget365" style="display: none;">OUTPUT TARGET 365</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-batch">BATCH</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-satuan">SATUAN</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-keterangan">KETERANGAN</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-minorstop">MINORSTOP</th>
+         <th class="border border-gray-300 px-2 py-2 text-sm col-aksi">AKSI</th>
+        </tr>
+       </thead>
+       <tbody id="activityTableBody">
+       </tbody>
+      </table>
+     </div>
+     <div class="mt-4 flex gap-2 flex-wrap"><button onclick="addActivityRow()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"> <i class="fas fa-plus"></i> Tambah Baris </button> <button onclick="clearAllActivityRows()" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"> <i class="fas fa-trash"></i> Hapus Semua </button> <button onclick="toggleColumnSelector()" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"> <i class="fas fa-columns"></i> Atur Kolom </button> <button onclick="openManageActivitiesModal()" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"> <i class="fas fa-tasks"></i> Kelola Aktivitas per Mesin </button>
+     </div><!-- Column Selector Panel -->
+     <div id="columnSelectorPanel" class="hidden mt-4 p-4 bg-gray-50 rounded-lg border border-gray-300">
+      <h3 class="font-bold mb-3 text-lg">Pilih Kolom yang Ditampilkan</h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3"><label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="no" checked onchange="toggleColumn('no')"> <span class="text-sm">NO</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="kode" checked onchange="toggleColumn('kode')"> <span class="text-sm">KODE KEGIATAN</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="tkl" checked onchange="toggleColumn('tkl')"> <span class="text-sm">JUMLAH TKL</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="dari" checked onchange="toggleColumn('dari')"> <span class="text-sm">DARI</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="sampai" checked onchange="toggleColumn('sampai')"> <span class="text-sm">SAMPAI</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="durasi" checked onchange="toggleColumn('durasi')"> <span class="text-sm">DURASI (menit)</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="aktivitas" checked onchange="toggleColumn('aktivitas')"> <span class="text-sm">AKTIVITAS</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="disposisi" checked onchange="toggleColumn('disposisi')"> <span class="text-sm">DISPOSISI NO.WR</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="schedule" checked onchange="toggleColumn('schedule')"> <span class="text-sm">NOMOR SCHEDULE</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="batchnumber" checked onchange="toggleColumn('batchnumber')"> <span class="text-sm">BATCH NUMBER</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="goodoutput" checked onchange="toggleColumn('goodoutput')"> <span class="text-sm">GOOD OUTPUT</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="afkir" checked onchange="toggleColumn('afkir')"> <span class="text-sm">AFKIR</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="linestopmesin" checked onchange="toggleColumn('linestopmesin')"> <span class="text-sm">LINESTOP MESIN</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="linestopnonmesin" checked onchange="toggleColumn('linestopnonmesin')"> <span class="text-sm">LINESTOP NON MESIN</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="jamkerja" checked onchange="toggleColumn('jamkerja')"> <span class="text-sm">JAM KERJA</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="odt" checked onchange="toggleColumn('odt')"> <span class="text-sm">ODT</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="jamkerjaaktual" checked onchange="toggleColumn('jamkerjaaktual')"> <span class="text-sm">JAM KERJA AKTUAL</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="jamkerjatarget" checked onchange="toggleColumn('jamkerjatarget')"> <span class="text-sm">JAM KERJA TARGET</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="outputaktual" checked onchange="toggleColumn('outputaktual')"> <span class="text-sm">OUTPUT AKTUAL</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="outputtargethasil" checked onchange="toggleColumn('outputtargethasil')"> <span class="text-sm">OUTPUT TARGET</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="outputtarget365" onchange="toggleColumn('outputtarget365')"> <span class="text-sm">OUTPUT TARGET 365</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="batch" checked onchange="toggleColumn('batch')"> <span class="text-sm">BATCH</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="satuan" checked onchange="toggleColumn('satuan')"> <span class="text-sm">SATUAN</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="keterangan" checked onchange="toggleColumn('keterangan')"> <span class="text-sm">KETERANGAN</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="minorstop" checked onchange="toggleColumn('minorstop')"> <span class="text-sm">MINORSTOP</span> </label> <label class="flex items-center gap-2 cursor-pointer"> <input type="checkbox" class="column-toggle" data-column="aksi" checked onchange="toggleColumn('aksi')"> <span class="text-sm">AKSI</span> </label>
+      </div>
+      <div class="mt-4 flex gap-2"><button onclick="showAllColumns()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"> <i class="fas fa-check-double"></i> Tampilkan Semua </button> <button onclick="hideAllColumns()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 text-sm"> <i class="fas fa-eye-slash"></i> Sembunyikan Semua </button>
+      </div>
+     </div>
+    </div><!-- OEE Metrics Preview -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+     <h2 class="text-xl font-bold mb-4"><i class="fas fa-tachometer-alt"></i> Perhitungan OEE Real-time</h2>
+     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      <div class="text-center p-4 rounded-lg transition-colors" id="oeeCard">
+       <div class="text-3xl font-bold" id="previewOEE">
+        0%
+       </div>
+       <div class="text-sm">
+        OEE
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="avCard">
+       <div class="text-3xl font-bold" id="previewAV">
+        0%
+       </div>
+       <div class="text-sm">
+        Availability
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="peCard">
+       <div class="text-3xl font-bold" id="previewPE">
+        0%
+       </div>
+       <div class="text-sm">
+        Performance
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="qrCard">
+       <div class="text-3xl font-bold" id="previewQR">
+        0%
+       </div>
+       <div class="text-sm">
+        Quality Rate
+       </div>
+      </div>
+     </div>
+     <h3 class="text-lg font-bold mb-4">Target OEE 365 (Berdasarkan Jam Kerja Penuh)</h3>
+     <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="text-center p-4 rounded-lg transition-colors" id="oee365Card">
+       <div class="text-3xl font-bold" id="previewOEE365">
+        0%
+       </div>
+       <div class="text-sm">
+        OEE 365
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="av365Card">
+       <div class="text-3xl font-bold" id="previewAV365">
+        0%
+       </div>
+       <div class="text-sm">
+        AV 365
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="pe365Card">
+       <div class="text-3xl font-bold" id="previewPE365">
+        0%
+       </div>
+       <div class="text-sm">
+        PE 365
+       </div>
+      </div>
+      <div class="text-center p-4 rounded-lg transition-colors" id="qr365Card">
+       <div class="text-3xl font-bold" id="previewQR365">
+        0%
+       </div>
+       <div class="text-sm">
+        QR 365
+       </div>
+      </div>
+     </div><!-- Legend -->
+     <div class="mt-6 p-4 bg-gray-100 rounded-lg">
+      <h4 class="font-bold mb-2">Legend Pewarnaan:</h4>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
+       <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-green-500 rounded"></div><span>≥ 85% (Excellent)</span>
+       </div>
+       <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-blue-500 rounded"></div><span>70-84% (Good)</span>
+       </div>
+       <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-yellow-500 rounded"></div><span>50-69% (Fair)</span>
+       </div>
+       <div class="flex items-center gap-2">
+        <div class="w-6 h-6 bg-red-500 rounded"></div><span>&lt; 50% (Poor)</span>
+       </div>
+      </div>
+     </div>
+    </div><!-- Preview Table Section -->
+    <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+     <div class="flex justify-between items-center mb-4">
+      <h2 class="text-xl font-bold"><i class="fas fa-eye"></i> Preview Data</h2><button onclick="togglePreviewTable()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> <span id="previewToggleText">Tampilkan Preview</span> </button>
+     </div>
+     <div id="previewTableContainer" class="hidden overflow-x-auto">
+      <table class="w-full border-collapse border border-gray-300 text-sm">
+       <thead>
+        <tr class="bg-gray-200">
+         <th class="border border-gray-300 px-2 py-2">Tanggal</th>
+         <th class="border border-gray-300 px-2 py-2">Line</th>
+         <th class="border border-gray-300 px-2 py-2">Mesin</th>
+         <th class="border border-gray-300 px-2 py-2">Shift</th>
+         <th class="border border-gray-300 px-2 py-2">Kode</th>
+         <th class="border border-gray-300 px-2 py-2">TKL</th>
+         <th class="border border-gray-300 px-2 py-2">Dari</th>
+         <th class="border border-gray-300 px-2 py-2">Sampai</th>
+         <th class="border border-gray-300 px-2 py-2">Durasi</th>
+         <th class="border border-gray-300 px-2 py-2">Good Output</th>
+         <th class="border border-gray-300 px-2 py-2">Afkir</th>
+        </tr>
+       </thead>
+       <tbody id="previewTableBody">
+       </tbody>
+      </table>
+     </div>
+    </div><!-- Action Buttons -->
+    <div class="bg-white rounded-lg shadow-lg p-6">
+     <div class="flex gap-4 justify-center flex-wrap"><button onclick="saveData()" class="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 font-bold text-lg"> <i class="fas fa-save"></i> Simpan Data </button> <button onclick="clearForm()" class="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-bold text-lg"> <i class="fas fa-redo"></i> Reset Form </button> <button onclick="refreshPreviewTable()" class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-bold text-lg"> <i class="fas fa-sync"></i> Refresh Preview </button> <button onclick="openGoogleSheetsSettings()" class="px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 font-bold text-lg"> <i class="fas fa-cog"></i> Pengaturan Google Sheets </button>
+     </div>
+    </div>
+   </div>
+  </main><!-- Footer -->
+  <footer class="bg-gray-800 text-white py-6 mt-12 w-full">
+   <div class="w-full px-6">
+    <div class="flex flex-col md:flex-row justify-between items-center">
+     <div class="flex items-center space-x-3 mb-4 md:mb-0"><img src="https://iili.io/FZpW9nf.jpg" alt="TSUP Logo" class="w-10 h-10 object-contain filter drop-shadow-md" style="background: transparent; border-radius: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"> <i class="fas fa-industry text-xl text-blue-400 drop-shadow-md" style="display: none;"></i>
+      <div>
+       <h3 class="text-lg font-bold">TSUP Dankos Farma</h3>
+       <p class="text-gray-400 text-sm">Production Monitoring System</p>
+      </div>
+     </div>
+     <div class="text-center md:text-right">
+      <p class="text-gray-400 text-sm">© <span id="currentYear">2024</span> TSUP Dankos Farma. All rights reserved.</p>
+      <p class="text-gray-500 text-xs mt-1">Last updated: <span id="lastUpdate">-</span></p>
+     </div>
+    </div>
+   </div>
+  </footer><!-- Modal Manage Line -->
+  <div id="manageLineModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+   <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+     <h3 class="text-xl font-bold">Kelola Line Mesin</h3><button onclick="closeManageLineModal()" class="text-gray-500 hover:text-gray-700"> <i class="fas fa-times text-2xl"></i> </button>
+    </div>
+    <div class="p-6"><!-- Add New Line Form -->
+     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h4 class="font-bold mb-3">Tambah Line Baru</h4>
+      <div class="flex gap-2"><input type="text" id="newLineCode" placeholder="Kode Line (contoh: 01, 02)" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg"> <button onclick="addNewLine()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"> <i class="fas fa-plus"></i> Tambah </button>
+      </div>
+     </div><!-- Existing Lines List -->
+     <div>
+      <h4 class="font-bold mb-3">Daftar Line</h4>
+      <div id="linesList" class="space-y-2"><!-- Lines will be populated here -->
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modal Google Sheets Settings -->
+  <div id="googleSheetsModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+   <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+     <h3 class="text-xl font-bold">Pengaturan Google Sheets</h3><button onclick="closeGoogleSheetsSettings()" class="text-gray-500 hover:text-gray-700"> <i class="fas fa-times text-2xl"></i> </button>
+    </div>
+    <div class="p-6">
+     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h4 class="font-bold mb-2 text-blue-800"><i class="fas fa-info-circle"></i> Cara Mengatur Google Sheets</h4>
+      <ol class="text-sm space-y-2 text-gray-700 list-decimal list-inside">
+       <li>Buka <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" class="text-blue-600 underline">Google Cloud Console</a></li>
+       <li>Buat project baru atau pilih project yang sudah ada</li>
+       <li>Aktifkan Google Sheets API</li>
+       <li>Buat Credentials �� API Key</li>
+       <li>Salin API Key dan paste di bawah</li>
+       <li>Buat Google Sheet baru dan salin Sheet ID dari URL</li>
+      </ol>
+     </div>
+     <div class="space-y-4">
+      <div><label for="apiKeyInput" class="block text-sm font-medium mb-2"> <i class="fas fa-key"></i> Google Sheets API Key </label> <input type="text" id="apiKeyInput" placeholder="Masukkan API Key Anda" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+       <p class="text-xs text-gray-500 mt-1">API Key akan disimpan secara lokal di browser Anda</p>
+      </div>
+      <div><label for="spreadsheetIdInput" class="block text-sm font-medium mb-2"> <i class="fas fa-file-excel"></i> Spreadsheet ID </label> <input type="text" id="spreadsheetIdInput" placeholder="Masukkan Spreadsheet ID" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+       <p class="text-xs text-gray-500 mt-1">Spreadsheet ID dapat ditemukan di URL: <br><span class="font-mono text-xs">https://docs.google.com/spreadsheets/d/<strong>[SPREADSHEET_ID]</strong>/edit</span></p>
+      </div>
+      <div><label for="sheetNameInput" class="block text-sm font-medium mb-2"> <i class="fas fa-table"></i> Nama Sheet (Tab) </label> <input type="text" id="sheetNameInput" placeholder="Sheet1" value="Sheet1" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+       <p class="text-xs text-gray-500 mt-1">Nama tab/sheet tempat data akan disimpan</p>
+      </div>
+      <div class="flex gap-3 pt-4"><button onclick="saveGoogleSheetsConfig()" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"> <i class="fas fa-save"></i> Simpan Konfigurasi </button> <button onclick="testGoogleSheetsConnection()" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> <i class="fas fa-plug"></i> Test Koneksi </button>
+      </div>
+      <div id="connectionStatus" class="hidden mt-4 p-3 rounded-lg"></div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modal Manage Activities -->
+  <div id="manageActivitiesModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+   <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl mx-4 max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+     <h3 class="text-xl font-bold">Kelola Aktivitas per Line &amp; Mesin</h3><button onclick="closeManageActivitiesModal()" class="text-gray-500 hover:text-gray-700"> <i class="fas fa-times text-2xl"></i> </button>
+    </div>
+    <div class="p-6"><!-- Step 1: Line -->
+     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h4 class="font-bold mb-3">1️⃣ Pilih Line Mesin</h4><select id="activityLineSelect" onchange="loadMachinesForActivityLine()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Line</option> </select>
+     </div><!-- Step 2: Machine -->
+     <div id="machineSelectContainer" class="hidden mb-6 p-4 bg-purple-50 rounded-lg">
+      <h4 class="font-bold mb-3">2️⃣ Pilih Jenis Mesin</h4><select id="activityMachineSelect" onchange="loadStructuredActivities()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Mesin</option> </select>
+     </div><!-- Add Activity Form -->
+     <div id="addActivityForm" class="hidden mb-6 p-4 bg-green-50 rounded-lg">
+      <h4 class="font-bold mb-3">➕ Tambah Aktivitas Baru</h4>
+      <div class="mb-3"><label class="block text-sm font-medium mb-2">Pilih Kode Kegiatan</label> <select id="newActivityKode" class="w-full px-3 py-2 border border-gray-300 rounded-lg mb-3"> <option value="">Pilih Kode Kegiatan</option> <option value="1">1 - MinorStop</option> <option value="2">2 - Running</option> <option value="3">3 - Linestop Mesin</option> <option value="5">5 - 5R</option> <option value="6">6 - PM</option> <option value="7">7 - Cusu</option> <option value="8">8 - Istirahat</option> <option value="9">9 - Line stop non mesin</option> </select> <label class="block text-sm font-medium mb-2">Masukkan nama aktivitas (satu per baris untuk menambahkan beberapa sekaligus)</label> <textarea id="newActivityNames" placeholder="Setup WIP
+Cleaning
+Setup Bahan Baku
+dll..." rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
+       <p class="text-xs text-gray-600 mt-1"><i class="fas fa-info-circle"></i> Tulis satu nama aktivitas per baris untuk menambahkan beberapa sekaligus</p>
+      </div>
+      <div class="flex gap-2 flex-wrap"><button onclick="addMultipleStructuredActivities()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"> <i class="fas fa-plus"></i> Tambah Aktivitas </button> <button onclick="openImportXLSModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> <i class="fas fa-file-excel"></i> Import dari XLS </button>
+      </div>
+     </div><!-- Activities List -->
+     <div id="activitiesListContainer" class="hidden">
+      <div class="flex justify-between items-center mb-3">
+       <h4 class="font-bold">📋 Semua Aktivitas untuk: <span class="text-blue-600">Line <span id="selectedLine"></span></span> | <span class="text-purple-600"><span id="selectedMachine"></span></span></h4>
+      </div>
+      <div id="activitiesList" class="space-y-3 max-h-96 overflow-y-auto"><!-- Activities will be populated here -->
+      </div>
+      <div id="noActivitiesMessage" class="hidden text-center py-8 text-gray-500"><i class="fas fa-inbox text-4xl mb-2"></i>
+       <p>Belum ada aktivitas khusus untuk kombinasi ini</p>
+      </div>
+     </div>
+    </div>
+    <div class="p-6"><!-- Step 1: Kode Kegiatan -->
+     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h4 class="font-bold mb-3">1️⃣ Pilih Kode Kegiatan</h4><select id="activityKodeSelect" onchange="loadLinesForActivityKode()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Kode Kegiatan</option> <option value="1">1</option> <option value="2">2</option> <option value="3">3</option> <option value="5">5</option> <option value="6">6</option> <option value="7">7</option> <option value="8">8</option> <option value="9">9</option> </select>
+     </div><!-- Step 2: Line -->
+     <div id="lineSelectContainer" class="hidden mb-6 p-4 bg-purple-50 rounded-lg">
+      <h4 class="font-bold mb-3">2️⃣ Pilih Line Mesin</h4><select id="activityLineSelect" onchange="loadMachinesForActivityLine()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Line</option> </select>
+     </div><!-- Step 3: Machine -->
+     <div id="machineSelectContainer" class="hidden mb-6 p-4 bg-teal-50 rounded-lg">
+      <h4 class="font-bold mb-3">3️⃣ Pilih Jenis Mesin</h4><select id="activityMachineSelect" onchange="loadStructuredActivities()" class="w-full px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Mesin</option> </select>
+     </div><!-- Add Activity Form -->
+     <div id="addActivityForm" class="hidden mb-6 p-4 bg-green-50 rounded-lg">
+      <h4 class="font-bold mb-3">��� Tambah Aktivitas Baru</h4>
+      <div class="mb-3"><label class="block text-sm font-medium mb-2">Masukkan nama aktivitas (satu per baris untuk menambahkan beberapa sekaligus)</label> <textarea id="newActivityNames" placeholder="Setup WIP
+Cleaning
+Setup Bahan Baku
+dll..." rows="5" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-sm"></textarea>
+       <p class="text-xs text-gray-600 mt-1"><i class="fas fa-info-circle"></i> Tulis satu nama aktivitas per baris untuk menambahkan beberapa sekaligus</p>
+      </div>
+      <div class="flex gap-2 flex-wrap"><button onclick="addMultipleStructuredActivities()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"> <i class="fas fa-plus"></i> Tambah Aktivitas </button> <button onclick="openImportXLSModal()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"> <i class="fas fa-file-excel"></i> Import dari XLS </button>
+      </div>
+     </div><!-- Activities List -->
+     <div id="activitiesListContainer" class="hidden">
+      <div class="flex justify-between items-center mb-3">
+       <h4 class="font-bold">📋 Aktivitas untuk: <span class="text-blue-600">Kode <span id="selectedKode"></span></span> | <span class="text-purple-600">Line <span id="selectedLine"></span></span> | <span class="text-teal-600"><span id="selectedMachine"></span></span></h4>
+      </div>
+      <div id="activitiesList" class="space-y-2 max-h-96 overflow-y-auto"><!-- Activities will be populated here -->
+      </div>
+      <div id="noActivitiesMessage" class="hidden text-center py-8 text-gray-500"><i class="fas fa-inbox text-4xl mb-2"></i>
+       <p>Belum ada aktivitas khusus untuk kombinasi ini</p>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modal Import XLS -->
+  <div id="importXLSModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center">
+   <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+     <h3 class="text-xl font-bold">Import Aktivitas dari File XLS/XLSX</h3><button onclick="closeImportXLSModal()" class="text-gray-500 hover:text-gray-700"> <i class="fas fa-times text-2xl"></i> </button>
+    </div>
+    <div class="p-6"><!-- Instructions -->
+     <div class="mb-6 p-4 bg-blue-50 rounded-lg">
+      <h4 class="font-bold mb-2 text-blue-800"><i class="fas fa-info-circle"></i> Format File Excel</h4>
+      <p class="text-sm text-gray-700 mb-3">File Excel harus memiliki kolom dengan header berikut:</p>
+      <div class="bg-white p-3 rounded border border-blue-200">
+       <table class="w-full text-xs">
+        <thead>
+         <tr class="bg-blue-100">
+          <th class="border border-blue-300 px-2 py-1">Kode Kegiatan</th>
+          <th class="border border-blue-300 px-2 py-1">Line</th>
+          <th class="border border-blue-300 px-2 py-1">Mesin</th>
+          <th class="border border-blue-300 px-2 py-1">Nama Aktivitas</th>
+         </tr>
+        </thead>
+        <tbody>
+         <tr>
+          <td class="border border-blue-200 px-2 py-1">1</td>
+          <td class="border border-blue-200 px-2 py-1">01</td>
+          <td class="border border-blue-200 px-2 py-1">JCMCO 39 3</td>
+          <td class="border border-blue-200 px-2 py-1">MinorStop</td>
+         </tr>
+         <tr>
+          <td class="border border-blue-200 px-2 py-1">2</td>
+          <td class="border border-blue-200 px-2 py-1">01</td>
+          <td class="border border-blue-200 px-2 py-1">JCMCO 39 3</td>
+          <td class="border border-blue-200 px-2 py-1">Running</td>
+         </tr>
+        </tbody>
+       </table>
+      </div>
+      <p class="text-xs text-gray-600 mt-2"><i class="fas fa-lightbulb"></i> Pastikan nama Line dan Mesin sesuai dengan yang sudah terdaftar di sistem</p>
+     </div><!-- File Upload -->
+     <div class="mb-6"><label class="block text-sm font-medium mb-2"> <i class="fas fa-upload"></i> Pilih File Excel </label> <input type="file" id="xlsFileInput" accept=".xls,.xlsx" class="w-full px-3 py-2 border border-gray-300 rounded-lg" onchange="handleXLSFileSelect(event)">
+     </div><!-- Preview Data -->
+     <div id="xlsPreviewContainer" class="hidden mb-6">
+      <h4 class="font-bold mb-3">Preview Data</h4>
+      <div class="overflow-x-auto max-h-96 border border-gray-300 rounded">
+       <table class="w-full text-sm">
+        <thead class="bg-gray-200 sticky top-0">
+         <tr>
+          <th class="border border-gray-300 px-2 py-2">No</th>
+          <th class="border border-gray-300 px-2 py-2">Kode</th>
+          <th class="border border-gray-300 px-2 py-2">Line</th>
+          <th class="border border-gray-300 px-2 py-2">Mesin</th>
+          <th class="border border-gray-300 px-2 py-2">Nama Aktivitas</th>
+          <th class="border border-gray-300 px-2 py-2">Status</th>
+         </tr>
+        </thead>
+        <tbody id="xlsPreviewTableBody">
+        </tbody>
+       </table>
+      </div>
+      <div class="mt-3 p-3 bg-gray-50 rounded">
+       <p class="text-sm"><span class="font-bold">Total Data:</span> <span id="xlsTotalCount">0</span> | <span class="font-bold text-green-600">Valid:</span> <span id="xlsValidCount">0</span> | <span class="font-bold text-red-600">Error:</span> <span id="xlsErrorCount">0</span></p>
+      </div>
+     </div><!-- Action Buttons -->
+     <div class="flex gap-3"><button onclick="importXLSData()" id="importXLSButton" disabled class="flex-1 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-bold"> <i class="fas fa-file-import"></i> Import Data </button> <button onclick="closeImportXLSModal()" class="px-4 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700"> <i class="fas fa-times"></i> Batal </button>
+     </div>
+    </div>
+   </div>
+  </div><!-- Modal Manage Machine -->
+  <div id="manageMachineModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+   <div class="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90%] overflow-y-auto">
+    <div class="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
+     <h3 class="text-xl font-bold">Kelola Jenis Mesin</h3><button onclick="closeManageMachineModal()" class="text-gray-500 hover:text-gray-700"> <i class="fas fa-times text-2xl"></i> </button>
+    </div>
+    <div class="p-6"><!-- Add New Machine Form -->
+     <div class="mb-6 p-4 bg-green-50 rounded-lg">
+      <h4 class="font-bold mb-3">Tambah Mesin Baru</h4>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3"><select id="newMachineLine" class="px-3 py-2 border border-gray-300 rounded-lg"> <option value="">Pilih Line</option> </select> <input type="text" id="newMachineName" placeholder="Nama Mesin" class="px-3 py-2 border border-gray-300 rounded-lg">
+      </div><button onclick="addNewMachine()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 w-full md:w-auto"> <i class="fas fa-plus"></i> Tambah Mesin </button>
+     </div><!-- Existing Machines List by Line -->
+     <div>
+      <h4 class="font-bold mb-3">Daftar Mesin per Line</h4>
+      <div id="machinesList"><!-- Machines will be populated here -->
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+  <script>
+    // Global Variables
+    let activityData = [];
+    let rowCounter = 0;
+    let savedDataRecords = []; // Simulated database
+    
+    // Google Sheets Configuration
+    let googleSheetsConfig = {
+      apiKey: '',
+      spreadsheetId: '',
+      sheetName: 'Sheet1'
+    };
+    
+    // Machine mapping by line
+    const machineMapping = {
+      '01': ['JCMCO 39 3', 'JCMCO 29', 'PRACTICA', 'PLANETA', 'KUNGLONG 6', 'SIEBLER GORING', 'KUNGLONG 7', 'ZANASI', 'SIEBLER 6R'],
+      '02': ['HOONGA', 'BREVETTI A35', 'BREVETTI ATM 18'],
+      '03': ['SIEBLER 10RC', 'SIEBLER 10RB', 'SIEBLER 12R', 'FETTE 3200i'],
+      '04': ['SIEBLER HM-1 PEN', 'SIEBLER GORING'],
+      '05': ['PAMPAC', 'SIEBLER ECO', 'JIH CHENG'],
+      '07': ['ROTA 07A', 'ROTA 07B']
+    };
+    
+    // Structured activities: key = "kode|line|machine"
+    let structuredActivities = {};
+    
+    // Machine-specific activities mapping (legacy)
+    let machineActivities = {};
+    
+    // Shift to working hours mapping (in minutes)
+    const shiftHoursMapping = {
+      '1': 510,
+      '2': 450,
+      '3': 510,
+      'LS1': 720,
+      'LS2': 720
+    };
+    
+    // Shift to time range mapping
+    const shiftTimeMapping = {
+      '1': { dari: '07:00', sampai: '15:30' },
+      '2': { dari: '15:20', sampai: '22:50' },
+      '3': { dari: '22:40', sampai: '07:10' },
+      'LS1': { dari: '07:00', sampai: '19:00' },
+      'LS2': { dari: '19:00', sampai: '07:00' }
+    };
+    
+    // Activity codes with default names
+    const activityCodes = {
+      '1': 'MinorStop',
+      '2': 'Running',
+      '3': 'Linestop Mesin',
+      '5': '5R',
+      '6': 'PM',
+      '7': 'Cusu',
+      '8': 'Istirahat',
+      '9': 'Line stop non mesin'
+    };
+
+    // Initialize on page load
+    window.addEventListener('DOMContentLoaded', function() {
+      initializeApp();
+    });
+
+    function initializeApp() {
+      updateDateTime();
+      setInterval(updateDateTime, 1000);
+      
+      // Update footer year and last update
+      updateFooter();
+      
+      // Set today's date automatically
+      const today = new Date();
+      const todayStr = formatDate(today);
+      document.getElementById('tanggal').value = todayStr;
+      
+      // Load lines and machines from localStorage
+      loadLinesAndMachines();
+      
+      // Load Google Sheets configuration
+      loadGoogleSheetsConfig();
+      
+      // Populate line select
+      populateLineSelect();
+      
+      // Add first row by default
+      addActivityRow();
+    }
+    
+    function loadGoogleSheetsConfig() {
+      const savedConfig = localStorage.getItem('googleSheetsConfig');
+      if (savedConfig) {
+        googleSheetsConfig = JSON.parse(savedConfig);
+        
+        // Load saved values into modal inputs
+        if (document.getElementById('apiKeyInput')) {
+          document.getElementById('apiKeyInput').value = googleSheetsConfig.apiKey || '';
+          document.getElementById('spreadsheetIdInput').value = googleSheetsConfig.spreadsheetId || '';
+          document.getElementById('sheetNameInput').value = googleSheetsConfig.sheetName || 'Sheet1';
+        }
+      }
+    }
+    
+    function openGoogleSheetsSettings() {
+      document.getElementById('googleSheetsModal').classList.remove('hidden');
+      
+      // Load current config into inputs
+      document.getElementById('apiKeyInput').value = googleSheetsConfig.apiKey || '';
+      document.getElementById('spreadsheetIdInput').value = googleSheetsConfig.spreadsheetId || '';
+      document.getElementById('sheetNameInput').value = googleSheetsConfig.sheetName || 'Sheet1';
+      
+      // Hide status message
+      document.getElementById('connectionStatus').classList.add('hidden');
+    }
+    
+    function closeGoogleSheetsSettings() {
+      document.getElementById('googleSheetsModal').classList.add('hidden');
+    }
+    
+    function saveGoogleSheetsConfig() {
+      const apiKey = document.getElementById('apiKeyInput').value.trim();
+      const spreadsheetId = document.getElementById('spreadsheetIdInput').value.trim();
+      const sheetName = document.getElementById('sheetNameInput').value.trim();
+      
+      if (!apiKey || !spreadsheetId || !sheetName) {
+        showConnectionStatus('Semua field harus diisi!', 'error');
+        return;
+      }
+      
+      googleSheetsConfig = {
+        apiKey: apiKey,
+        spreadsheetId: spreadsheetId,
+        sheetName: sheetName
+      };
+      
+      localStorage.setItem('googleSheetsConfig', JSON.stringify(googleSheetsConfig));
+      
+      showConnectionStatus('Konfigurasi berhasil disimpan!', 'success');
+    }
+    
+    async function testGoogleSheetsConnection() {
+      if (!googleSheetsConfig.apiKey || !googleSheetsConfig.spreadsheetId) {
+        showConnectionStatus('Simpan konfigurasi terlebih dahulu!', 'error');
+        return;
+      }
+      
+      showConnectionStatus('Menguji koneksi...', 'info');
+      
+      try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${googleSheetsConfig.spreadsheetId}?key=${googleSheetsConfig.apiKey}`;
+        
+        const response = await fetch(url);
+        
+        if (response.ok) {
+          const data = await response.json();
+          showConnectionStatus(`✅ Koneksi berhasil! Sheet: "${data.properties.title}"`, 'success');
+        } else {
+          const error = await response.json();
+          showConnectionStatus(`❌ Koneksi gagal: ${error.error.message}`, 'error');
+        }
+      } catch (error) {
+        showConnectionStatus(`����� Error: ${error.message}`, 'error');
+      }
+    }
+    
+    function showConnectionStatus(message, type) {
+      const statusDiv = document.getElementById('connectionStatus');
+      statusDiv.classList.remove('hidden', 'bg-green-100', 'bg-red-100', 'bg-blue-100', 'text-green-800', 'text-red-800', 'text-blue-800');
+      
+      if (type === 'success') {
+        statusDiv.classList.add('bg-green-100', 'text-green-800');
+      } else if (type === 'error') {
+        statusDiv.classList.add('bg-red-100', 'text-red-800');
+      } else {
+        statusDiv.classList.add('bg-blue-100', 'text-blue-800');
+      }
+      
+      statusDiv.textContent = message;
+    }
+
+    function updateFooter() {
+      const currentYear = new Date().getFullYear();
+      document.getElementById('currentYear').textContent = currentYear;
+      
+      const now = new Date();
+      const lastUpdateStr = now.toLocaleDateString('id-ID', { 
+        day: '2-digit',
+        month: 'short', 
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+      document.getElementById('lastUpdate').textContent = lastUpdateStr;
+    }
+
+    function loadLinesAndMachines() {
+      const savedMachines = localStorage.getItem('machineMapping');
+      if (savedMachines) {
+        const parsed = JSON.parse(savedMachines);
+        Object.assign(machineMapping, parsed);
+      }
+      
+      const savedActivities = localStorage.getItem('machineActivities');
+      if (savedActivities) {
+        machineActivities = JSON.parse(savedActivities);
+      }
+      
+      const savedStructuredActivities = localStorage.getItem('structuredActivities');
+      if (savedStructuredActivities) {
+        structuredActivities = JSON.parse(savedStructuredActivities);
+      }
+    }
+
+    function saveMachineMapping() {
+      localStorage.setItem('machineMapping', JSON.stringify(machineMapping));
+    }
+    
+    function saveMachineActivities() {
+      localStorage.setItem('machineActivities', JSON.stringify(machineActivities));
+    }
+    
+    function saveStructuredActivities() {
+      localStorage.setItem('structuredActivities', JSON.stringify(structuredActivities));
+    }
+    
+    function getActivityKey(kode, line, machine) {
+      return `${kode}|${line}|${machine}`;
+    }
+
+    function populateLineSelect() {
+      const lineSelect = document.getElementById('line');
+      lineSelect.innerHTML = '<option value="">Pilih Line</option>';
+      
+      const sortedLines = Object.keys(machineMapping).sort();
+      sortedLines.forEach(lineCode => {
+        const option = document.createElement('option');
+        option.value = lineCode;
+        option.textContent = `Line ${lineCode}`;
+        lineSelect.appendChild(option);
+      });
+    }
+
+    // === MANAGE LINE MODAL ===
+    function openManageLineModal() {
+      document.getElementById('manageLineModal').classList.remove('hidden');
+      populateLinesList();
+    }
+
+    function closeManageLineModal() {
+      document.getElementById('manageLineModal').classList.add('hidden');
+      document.getElementById('newLineCode').value = '';
+    }
+
+    function populateLinesList() {
+      const linesList = document.getElementById('linesList');
+      linesList.innerHTML = '';
+      
+      const sortedLines = Object.keys(machineMapping).sort();
+      
+      if (sortedLines.length === 0) {
+        linesList.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada line yang terdaftar</p>';
+        return;
+      }
+      
+      sortedLines.forEach(lineCode => {
+        const lineItem = document.createElement('div');
+        lineItem.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg';
+        lineItem.innerHTML = `
+          <div>
+            <span class="font-medium">Line ${lineCode}</span>
+            <span class="text-sm text-gray-600 ml-2">(${machineMapping[lineCode].length} mesin)</span>
+          </div>
+          <button onclick="deleteLine('${lineCode}')" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+            <i class="fas fa-trash"></i> Hapus
+          </button>
+        `;
+        linesList.appendChild(lineItem);
+      });
+    }
+
+    function addNewLine() {
+      const lineCode = document.getElementById('newLineCode').value.trim();
+      
+      if (!lineCode) {
+        showValidationMessage('Kode line harus diisi!');
+        return;
+      }
+      
+      if (machineMapping[lineCode]) {
+        showValidationMessage('Line dengan kode ini sudah ada!');
+        return;
+      }
+      
+      machineMapping[lineCode] = [];
+      saveMachineMapping();
+      populateLinesList();
+      populateLineSelect();
+      document.getElementById('newLineCode').value = '';
+      
+      showSuccessMessage(`Line ${lineCode} berhasil ditambahkan!`);
+    }
+
+    function deleteLine(lineCode) {
+      const machineCount = machineMapping[lineCode].length;
+      
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-2xl z-50 max-w-md';
+      confirmDiv.innerHTML = `
+        <h3 class="text-lg font-bold mb-3">Konfirmasi Hapus</h3>
+        <p class="mb-4">Yakin ingin menghapus Line ${lineCode}?</p>
+        <p class="text-sm text-red-600 mb-4">${machineCount > 0 ? `Semua ${machineCount} mesin di line ini akan ikut terhapus!` : ''}</p>
+        <div class="flex gap-2 justify-end">
+          <button onclick="this.parentElement.parentElement.remove()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+            Batal
+          </button>
+          <button onclick="confirmDeleteLine('${lineCode}'); this.parentElement.parentElement.remove();" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            Hapus
+          </button>
+        </div>
+      `;
+      document.body.appendChild(confirmDiv);
+    }
+
+    function confirmDeleteLine(lineCode) {
+      delete machineMapping[lineCode];
+      saveMachineMapping();
+      populateLinesList();
+      populateLineSelect();
+      updateMachineOptions();
+      showSuccessMessage(`Line ${lineCode} berhasil dihapus!`);
+    }
+
+    // === MANAGE MACHINE MODAL ===
+    function openManageMachineModal() {
+      document.getElementById('manageMachineModal').classList.remove('hidden');
+      populateMachineLineSelect();
+      populateMachinesList();
+    }
+
+    function closeManageMachineModal() {
+      document.getElementById('manageMachineModal').classList.add('hidden');
+      document.getElementById('newMachineLine').value = '';
+      document.getElementById('newMachineName').value = '';
+    }
+
+    function populateMachineLineSelect() {
+      const lineSelect = document.getElementById('newMachineLine');
+      lineSelect.innerHTML = '<option value="">Pilih Line</option>';
+      
+      const sortedLines = Object.keys(machineMapping).sort();
+      sortedLines.forEach(lineCode => {
+        const option = document.createElement('option');
+        option.value = lineCode;
+        option.textContent = `Line ${lineCode}`;
+        lineSelect.appendChild(option);
+      });
+    }
+
+    function populateMachinesList() {
+      const machinesList = document.getElementById('machinesList');
+      machinesList.innerHTML = '';
+      
+      const sortedLines = Object.keys(machineMapping).sort();
+      
+      if (sortedLines.length === 0) {
+        machinesList.innerHTML = '<p class="text-gray-500 text-center py-4">Belum ada line yang terdaftar. Tambahkan line terlebih dahulu.</p>';
+        return;
+      }
+      
+      sortedLines.forEach(lineCode => {
+        const lineSection = document.createElement('div');
+        lineSection.className = 'mb-4 p-4 border border-gray-300 rounded-lg';
+        
+        let machinesHTML = '';
+        if (machineMapping[lineCode].length === 0) {
+          machinesHTML = '<p class="text-sm text-gray-500 italic">Belum ada mesin</p>';
+        } else {
+          machinesHTML = '<div class="space-y-2">';
+          machineMapping[lineCode].forEach((machine, index) => {
+            machinesHTML += `
+              <div class="flex justify-between items-center p-2 bg-gray-50 rounded">
+                <span class="text-sm">${machine}</span>
+                <button onclick="deleteMachine('${lineCode}', ${index})" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs">
+                  <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            `;
+          });
+          machinesHTML += '</div>';
+        }
+        
+        lineSection.innerHTML = `
+          <h5 class="font-bold mb-2">Line ${lineCode}</h5>
+          ${machinesHTML}
+        `;
+        
+        machinesList.appendChild(lineSection);
+      });
+    }
+
+    function addNewMachine() {
+      const lineCode = document.getElementById('newMachineLine').value;
+      const machineName = document.getElementById('newMachineName').value.trim();
+      
+      if (!lineCode) {
+        showValidationMessage('Pilih line terlebih dahulu!');
+        return;
+      }
+      
+      if (!machineName) {
+        showValidationMessage('Nama mesin harus diisi!');
+        return;
+      }
+      
+      if (machineMapping[lineCode].includes(machineName)) {
+        showValidationMessage('Mesin ini sudah ada di line tersebut!');
+        return;
+      }
+      
+      machineMapping[lineCode].push(machineName);
+      saveMachineMapping();
+      populateMachinesList();
+      document.getElementById('newMachineName').value = '';
+      
+      showSuccessMessage(`Mesin "${machineName}" berhasil ditambahkan ke Line ${lineCode}!`);
+      
+      // Update machine dropdown if same line is selected
+      const currentLine = document.getElementById('line').value;
+      if (currentLine === lineCode) {
+        updateMachineOptions();
+      }
+    }
+
+    function deleteMachine(lineCode, machineIndex) {
+      const machineName = machineMapping[lineCode][machineIndex];
+      
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-2xl z-50 max-w-md';
+      confirmDiv.innerHTML = `
+        <h3 class="text-lg font-bold mb-3">Konfirmasi Hapus</h3>
+        <p class="mb-4">Yakin ingin menghapus mesin "${machineName}" dari Line ${lineCode}?</p>
+        <div class="flex gap-2 justify-end">
+          <button onclick="this.parentElement.parentElement.remove()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+            Batal
+          </button>
+          <button onclick="confirmDeleteMachine('${lineCode}', ${machineIndex}); this.parentElement.parentElement.remove();" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            Hapus
+          </button>
+        </div>
+      `;
+      document.body.appendChild(confirmDiv);
+    }
+
+    function confirmDeleteMachine(lineCode, machineIndex) {
+      const machineName = machineMapping[lineCode][machineIndex];
+      machineMapping[lineCode].splice(machineIndex, 1);
+      saveMachineMapping();
+      populateMachinesList();
+      
+      // Delete activities for this machine from structuredActivities
+      const keysToDelete = [];
+      Object.keys(structuredActivities).forEach(key => {
+        if (key.endsWith(`|${machineName}`)) {
+          keysToDelete.push(key);
+        }
+      });
+      
+      keysToDelete.forEach(key => {
+        delete structuredActivities[key];
+      });
+      
+      if (keysToDelete.length > 0) {
+        saveStructuredActivities();
+      }
+      
+      // Update machine dropdown if same line is selected
+      const currentLine = document.getElementById('line').value;
+      if (currentLine === lineCode) {
+        updateMachineOptions();
+      }
+      
+      showSuccessMessage(`Mesin "${machineName}" berhasil dihapus!`);
+    }
+    
+    // === MANAGE ACTIVITIES MODAL ===
+    function openManageActivitiesModal() {
+      document.getElementById('manageActivitiesModal').classList.remove('hidden');
+      resetActivityModal();
+      populateActivityLineSelect();
+    }
+    
+    function closeManageActivitiesModal() {
+      document.getElementById('manageActivitiesModal').classList.add('hidden');
+      resetActivityModal();
+    }
+    
+    function resetActivityModal() {
+      document.getElementById('activityLineSelect').value = '';
+      document.getElementById('machineSelectContainer').classList.add('hidden');
+      document.getElementById('addActivityForm').classList.add('hidden');
+      document.getElementById('activitiesListContainer').classList.add('hidden');
+      document.getElementById('newActivityNames').value = '';
+      document.getElementById('newActivityKode').value = '';
+    }
+    
+    function populateActivityLineSelect() {
+      const lineSelect = document.getElementById('activityLineSelect');
+      lineSelect.innerHTML = '<option value="">Pilih Line</option>';
+      
+      const sortedLines = Object.keys(machineMapping).sort();
+      sortedLines.forEach(lineCode => {
+        const option = document.createElement('option');
+        option.value = lineCode;
+        option.textContent = `Line ${lineCode}`;
+        lineSelect.appendChild(option);
+      });
+    }
+    
+    function loadMachinesForActivityLine() {
+      const line = document.getElementById('activityLineSelect').value;
+      
+      if (!line) {
+        document.getElementById('machineSelectContainer').classList.add('hidden');
+        document.getElementById('addActivityForm').classList.add('hidden');
+        document.getElementById('activitiesListContainer').classList.add('hidden');
+        return;
+      }
+      
+      document.getElementById('machineSelectContainer').classList.remove('hidden');
+      
+      const machineSelect = document.getElementById('activityMachineSelect');
+      machineSelect.innerHTML = '<option value="">Pilih Mesin</option>';
+      
+      if (machineMapping[line]) {
+        machineMapping[line].forEach(machine => {
+          const option = document.createElement('option');
+          option.value = machine;
+          option.textContent = machine;
+          machineSelect.appendChild(option);
+        });
+      }
+      
+      document.getElementById('addActivityForm').classList.add('hidden');
+      document.getElementById('activitiesListContainer').classList.add('hidden');
+    }
+    
+    function loadStructuredActivities() {
+      const line = document.getElementById('activityLineSelect').value;
+      const machine = document.getElementById('activityMachineSelect').value;
+      
+      if (!line || !machine) {
+        document.getElementById('addActivityForm').classList.add('hidden');
+        document.getElementById('activitiesListContainer').classList.add('hidden');
+        return;
+      }
+      
+      document.getElementById('addActivityForm').classList.remove('hidden');
+      document.getElementById('activitiesListContainer').classList.remove('hidden');
+      
+      document.getElementById('selectedLine').textContent = line;
+      document.getElementById('selectedMachine').textContent = machine;
+      
+      // Collect all activities for this line-machine combination across ALL codes
+      const allActivities = [];
+      
+      Object.keys(activityCodes).forEach(kode => {
+        const key = getActivityKey(kode, line, machine);
+        const activities = structuredActivities[key] || [];
+        
+        activities.forEach((activity, index) => {
+          allActivities.push({
+            kode: kode,
+            kodeName: activityCodes[kode],
+            name: activity.name,
+            key: key,
+            index: index
+          });
+        });
+      });
+      
+      const activitiesList = document.getElementById('activitiesList');
+      const noActivitiesMessage = document.getElementById('noActivitiesMessage');
+      
+      activitiesList.innerHTML = '';
+      
+      if (allActivities.length === 0) {
+        noActivitiesMessage.classList.remove('hidden');
+      } else {
+        noActivitiesMessage.classList.add('hidden');
+        
+        // Group by kode
+        const groupedByKode = {};
+        allActivities.forEach(activity => {
+          if (!groupedByKode[activity.kode]) {
+            groupedByKode[activity.kode] = [];
+          }
+          groupedByKode[activity.kode].push(activity);
+        });
+        
+        // Display grouped by kode
+        Object.keys(groupedByKode).sort().forEach(kode => {
+          const kodeSection = document.createElement('div');
+          kodeSection.className = 'mb-4 p-4 bg-white border-2 border-gray-300 rounded-lg';
+          
+          const kodeHeader = document.createElement('h5');
+          kodeHeader.className = 'font-bold text-lg mb-3 text-blue-700';
+          kodeHeader.innerHTML = `<i class="fas fa-tag"></i> Kode ${kode} - ${activityCodes[kode]}`;
+          kodeSection.appendChild(kodeHeader);
+          
+          const activitiesInKode = groupedByKode[kode];
+          
+          activitiesInKode.forEach(activity => {
+            const activityItem = document.createElement('div');
+            activityItem.className = 'flex justify-between items-center p-3 bg-gray-50 rounded-lg hover:bg-gray-100 mb-2';
+            activityItem.innerHTML = `
+              <div class="flex-1">
+                <div class="font-medium">${activity.name}</div>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="editStructuredActivity('${activity.key}', ${activity.index})" class="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
+                  <i class="fas fa-edit"></i> Edit
+                </button>
+                <button onclick="deleteStructuredActivity('${activity.key}', ${activity.index})" class="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+                  <i class="fas fa-trash"></i> Hapus
+                </button>
+              </div>
+            `;
+            kodeSection.appendChild(activityItem);
+          });
+          
+          activitiesList.appendChild(kodeSection);
+        });
+      }
+    }
+    
+    function addMultipleStructuredActivities() {
+      const kode = document.getElementById('newActivityKode').value;
+      const line = document.getElementById('activityLineSelect').value;
+      const machine = document.getElementById('activityMachineSelect').value;
+      const activitiesText = document.getElementById('newActivityNames').value.trim();
+      
+      if (!line || !machine) {
+        showValidationMessage('Pilih Line dan Mesin terlebih dahulu!');
+        return;
+      }
+      
+      if (!kode) {
+        showValidationMessage('Pilih Kode Kegiatan terlebih dahulu!');
+        return;
+      }
+      
+      if (!activitiesText) {
+        showValidationMessage('Masukkan minimal satu nama aktivitas!');
+        return;
+      }
+      
+      // Split by newlines and filter out empty lines
+      const activityNames = activitiesText
+        .split('\n')
+        .map(name => name.trim())
+        .filter(name => name.length > 0);
+      
+      if (activityNames.length === 0) {
+        showValidationMessage('Tidak ada aktivitas yang valid untuk ditambahkan!');
+        return;
+      }
+      
+      const key = getActivityKey(kode, line, machine);
+      
+      if (!structuredActivities[key]) {
+        structuredActivities[key] = [];
+      }
+      
+      let addedCount = 0;
+      let skippedCount = 0;
+      const skippedNames = [];
+      
+      activityNames.forEach(activityName => {
+        const duplicate = structuredActivities[key].find(a => a.name === activityName);
+        if (duplicate) {
+          skippedCount++;
+          skippedNames.push(activityName);
+        } else {
+          structuredActivities[key].push({
+            name: activityName,
+            detailCode: ''
+          });
+          addedCount++;
+        }
+      });
+      
+      saveStructuredActivities();
+      loadStructuredActivities();
+      
+      document.getElementById('newActivityNames').value = '';
+      document.getElementById('newActivityKode').value = '';
+      
+      let message = `✅ Berhasil menambahkan ${addedCount} aktivitas untuk Kode ${kode} - ${activityCodes[kode]}!`;
+      if (skippedCount > 0) {
+        message += `\n\n⚠️ ${skippedCount} aktivitas dilewati (sudah ada):\n${skippedNames.join(', ')}`;
+      }
+      
+      showSuccessMessage(message);
+    }
+    
+    function deleteStructuredActivity(key, activityIndex) {
+      const activity = structuredActivities[key][activityIndex];
+      
+      const confirmDiv = document.createElement('div');
+      confirmDiv.className = 'fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white p-6 rounded-lg shadow-2xl z-[60] max-w-md';
+      confirmDiv.innerHTML = `
+        <h3 class="text-lg font-bold mb-3">Konfirmasi Hapus</h3>
+        <p class="mb-4">Yakin ingin menghapus aktivitas "${activity.name}"?</p>
+        <div class="flex gap-2 justify-end">
+          <button onclick="this.parentElement.parentElement.remove()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+            Batal
+          </button>
+          <button onclick="confirmDeleteStructuredActivity('${key}', ${activityIndex}); this.parentElement.parentElement.remove();" class="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700">
+            Hapus
+          </button>
+        </div>
+      `;
+      document.body.appendChild(confirmDiv);
+    }
+    
+    function confirmDeleteStructuredActivity(key, activityIndex) {
+      const activity = structuredActivities[key][activityIndex];
+      structuredActivities[key].splice(activityIndex, 1);
+      
+      if (structuredActivities[key].length === 0) {
+        delete structuredActivities[key];
+      }
+      
+      saveStructuredActivities();
+      loadStructuredActivities();
+      showSuccessMessage(`Aktivitas "${activity.name}" berhasil dihapus!`);
+    }
+    
+    function editStructuredActivity(key, activityIndex) {
+      const activity = structuredActivities[key][activityIndex];
+      
+      const editModal = document.createElement('div');
+      editModal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[60] flex items-center justify-center';
+      editModal.innerHTML = `
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 p-6">
+          <h3 class="text-lg font-bold mb-4">Edit Nama Aktivitas</h3>
+          <div class="mb-4">
+            <label class="block text-sm font-medium mb-2">Nama Aktivitas</label>
+            <input type="text" id="editActivityNameInput" value="${activity.name}" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+          </div>
+          <div class="flex gap-2 justify-end">
+            <button onclick="this.closest('.fixed').remove()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">
+              Batal
+            </button>
+            <button onclick="saveEditedActivity('${key}', ${activityIndex})" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+              Simpan
+            </button>
+          </div>
+        </div>
+      `;
+      
+      document.body.appendChild(editModal);
+      
+      // Focus on input
+      setTimeout(() => {
+        document.getElementById('editActivityNameInput').focus();
+        document.getElementById('editActivityNameInput').select();
+      }, 100);
+    }
+    
+    function saveEditedActivity(key, activityIndex) {
+      const newName = document.getElementById('editActivityNameInput').value.trim();
+      
+      if (!newName) {
+        showValidationMessage('Nama aktivitas tidak boleh kosong!');
+        return;
+      }
+      
+      // Check for duplicates (exclude current activity)
+      const duplicate = structuredActivities[key].find((a, idx) => 
+        idx !== activityIndex && a.name === newName
+      );
+      
+      if (duplicate) {
+        showValidationMessage('Nama aktivitas sudah ada!');
+        return;
+      }
+      
+      const oldName = structuredActivities[key][activityIndex].name;
+      structuredActivities[key][activityIndex].name = newName;
+      
+      saveStructuredActivities();
+      loadStructuredActivities();
+      
+      // Close modal
+      const modal = document.getElementById('editActivityNameInput').closest('.fixed');
+      if (modal) modal.remove();
+      
+      showSuccessMessage(`Aktivitas berhasil diubah dari "${oldName}" menjadi "${newName}"!`);
+    }
+
+    function formatDate(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function updateDateTime() {
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('id-ID', { 
+        weekday: 'long', 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      });
+      const timeStr = now.toLocaleTimeString('id-ID');
+      
+      document.getElementById('headerCurrentDate').textContent = dateStr;
+      document.getElementById('headerCurrentTime').textContent = timeStr;
+    }
+
+    function formatDateDisplay(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      const day = String(date.getDate()).padStart(2, '0');
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+      const month = months[date.getMonth()];
+      const year = date.getFullYear();
+      return `${day} ${month} ${year}`;
+    }
+
+
+
+    function updateMachineOptions() {
+      const line = document.getElementById('line').value;
+      const machineSelect = document.getElementById('jenisMesin');
+      
+      machineSelect.innerHTML = '<option value="">Pilih Mesin</option>';
+      
+      if (line && machineMapping[line]) {
+        machineMapping[line].forEach(machine => {
+          const option = document.createElement('option');
+          option.value = machine;
+          option.textContent = machine;
+          machineSelect.appendChild(option);
+        });
+      }
+      
+      // Update all activity dropdowns when line changes
+      updateAllActivityDropdowns();
+    }
+    
+    function updateActivitiesForSelectedMachine() {
+      const machine = document.getElementById('jenisMesin').value;
+      
+      // Update all activity dropdowns in the table
+      const activitySelects = document.querySelectorAll('.aktivitas-input');
+      
+      activitySelects.forEach(select => {
+        const currentValue = select.value;
+        
+        // Clear and rebuild options
+        select.innerHTML = '<option value="">Pilih Aktivitas</option>';
+        
+        // Add default activities
+        const defaultActivities = [
+          'Produksi', 'Setup', 'Maintenance', 'Breakdown', 
+          'Quality Check', 'Cleaning', 'Changeover'
+        ];
+        
+        defaultActivities.forEach(activity => {
+          const option = document.createElement('option');
+          option.value = activity;
+          option.textContent = activity;
+          select.appendChild(option);
+        });
+        
+        // Add machine-specific activities if available
+        if (machine && machineActivities[machine] && machineActivities[machine].length > 0) {
+          // Add separator
+          const separator = document.createElement('option');
+          separator.disabled = true;
+          separator.textContent = '────── Aktivitas Khusus Mesin ──────';
+          select.appendChild(separator);
+          
+          machineActivities[machine].forEach(activity => {
+            const option = document.createElement('option');
+            option.value = activity.name;
+            option.textContent = `${activity.name} (${activity.code})`;
+            select.appendChild(option);
+          });
+        }
+        
+        // Restore previous value if it still exists
+        if (currentValue) {
+          const optionExists = Array.from(select.options).some(opt => opt.value === currentValue);
+          if (optionExists) {
+            select.value = currentValue;
+          }
+        }
+      });
+    }
+
+    function updateJamKerjaFromShift() {
+      const shift = document.getElementById('shift').value;
+      const jamKerjaMenit = shiftHoursMapping[shift] || 0;
+      
+      const firstRow = document.querySelector('[data-row-id="0"]');
+      if (firstRow) {
+        const jamKerjaInput = firstRow.querySelector('.jam-kerja-input');
+        if (jamKerjaInput) {
+          jamKerjaInput.value = jamKerjaMenit;
+        }
+      }
+      
+      recalculateOutputTarget365();
+    }
+
+    function addActivityRow() {
+      const tbody = document.getElementById('activityTableBody');
+      const row = document.createElement('tr');
+      row.setAttribute('data-row-id', rowCounter);
+      row.className = 'hover:bg-gray-50';
+      
+      const isFirstRow = rowCounter === 0;
+      
+      // Get previous row values for auto-fill
+      let previousSatuan = '';
+      let previousBatchNumber = '';
+      let previousBatch = '';
+      let previousSampai = '';
+      let previousTKL = '';
+      
+      if (rowCounter > 0) {
+        const previousRow = document.querySelector(`[data-row-id="${rowCounter - 1}"]`);
+        if (previousRow) {
+          const satuanSelect = previousRow.querySelector('.satuan-input');
+          const batchNumberInput = previousRow.querySelector('.batchnumber-input');
+          const batchInput = previousRow.querySelector('.batch-input');
+          const sampaiInput = previousRow.querySelector('.sampai-time');
+          const tklInput = previousRow.querySelector('.jumlah-tkl');
+          
+          if (satuanSelect) previousSatuan = satuanSelect.value;
+          if (batchNumberInput) previousBatchNumber = batchNumberInput.value;
+          if (batchInput) previousBatch = batchInput.value;
+          if (sampaiInput) previousSampai = sampaiInput.value;
+          if (tklInput) previousTKL = tklInput.value;
+        }
+      }
+      
+      row.innerHTML = `
+        <td class="border border-gray-300 px-2 py-2 col-no">
+          <span class="font-medium">${rowCounter + 1}</span>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-kode">
+          <select class="w-full px-2 py-1 border border-gray-300 rounded activity-code" onchange="handleActivityCodeChange(${rowCounter})">
+            <option value="">Pilih</option>
+            ${Object.entries(activityCodes).map(([code, name]) => 
+              `<option value="${code}">${code}</option>`
+            ).join('')}
+          </select>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-tkl">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded jumlah-tkl" value="${previousTKL}" min="0">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-dari">
+          <input type="time" class="w-full px-2 py-1 border border-gray-300 rounded dari-time" value="${previousSampai}" onchange="calculateDuration(${rowCounter})">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-sampai">
+          <input type="time" class="w-full px-2 py-1 border border-gray-300 rounded sampai-time" onchange="calculateDuration(${rowCounter})">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-durasi">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded durasi-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-aktivitas">
+          <select class="w-full px-2 py-1 border border-gray-300 rounded aktivitas-input">
+            <option value="">Pilih Aktivitas</option>
+          </select>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-disposisi">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded disposisi-input">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-schedule">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded schedule-input">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-batchnumber">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded batchnumber-input" value="${previousBatchNumber}" onchange="copyBatchNumberToBatch(${rowCounter})">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-goodoutput">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded good-output" min="0" onchange="calculateODT(); calculateOEEMetrics();">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-afkir">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded afkir" min="0" onchange="calculateODT(); calculateOEEMetrics();">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-linestopmesin">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 linestopmesin-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-linestopnonmesin">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 linestopnonmesin-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-jamkerja">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 jam-kerja-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-odt">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 odt-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-jamkerjaaktual">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 jam-kerja-aktual-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-jamkerjatarget">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 jam-kerja-target-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-outputaktual">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 output-aktual-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-outputtargethasil">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 output-target-hasil-input" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-outputtarget365" style="display: none;">
+          <input type="number" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 output-target-365" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-batch">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded bg-gray-100 batch-input" value="${previousBatch}" readonly>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-satuan">
+          <select class="w-full px-2 py-1 border border-gray-300 rounded satuan-input">
+            <option value="">Pilih Satuan</option>
+            <option value="PCS" ${previousSatuan === 'PCS' ? 'selected' : ''}>PCS</option>
+            <option value="UNIT" ${previousSatuan === 'UNIT' ? 'selected' : ''}>UNIT</option>
+            <option value="TABLET" ${previousSatuan === 'TABLET' ? 'selected' : ''}>TABLET</option>
+            <option value="AMPUL" ${previousSatuan === 'AMPUL' ? 'selected' : ''}>AMPUL</option>
+            <option value="VIAL" ${previousSatuan === 'VIAL' ? 'selected' : ''}>VIAL</option>
+            <option value="BOTOL" ${previousSatuan === 'BOTOL' ? 'selected' : ''}>BOTOL</option>
+            <option value="KG" ${previousSatuan === 'KG' ? 'selected' : ''}>KG</option>
+            <option value="LITER" ${previousSatuan === 'LITER' ? 'selected' : ''}>LITER</option>
+            <option value="STRIP/MENIT" ${previousSatuan === 'STRIP/MENIT' ? 'selected' : ''}>STRIP/MENIT</option>
+            <option value="BLISTER" ${previousSatuan === 'BLISTER' ? 'selected' : ''}>BLISTER</option>
+          </select>
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-keterangan">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded keterangan-input">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-minorstop">
+          <input type="text" class="w-full px-2 py-1 border border-gray-300 rounded minorstop-input">
+        </td>
+        <td class="border border-gray-300 px-2 py-2 col-aksi">
+          <button onclick="deleteActivityRow(${rowCounter})" class="px-2 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-sm">
+            Hapus
+          </button>
+        </td>
+      `;
+      
+      tbody.appendChild(row);
+      
+      activityData[rowCounter] = {
+        id: rowCounter,
+        code: '',
+        tkl: previousTKL || 0,
+        dari: previousSampai || '',
+        sampai: '',
+        durasi: 0,
+        jamKerja: 0,
+        outputTarget365: 0,
+        outputTarget: 0,
+        goodOutput: 0,
+        afkir: 0,
+        minorstop: '',
+        disposisi: ''
+      };
+      
+      rowCounter++;
+      
+      if (isFirstRow) {
+        updateJamKerjaFromShift();
+      }
+    }
+
+    function calculateDuration(rowId) {
+      const row = document.querySelector(`[data-row-id="${rowId}"]`);
+      const dariInput = row.querySelector('.dari-time');
+      const sampaiInput = row.querySelector('.sampai-time');
+      const durasiInput = row.querySelector('.durasi-input');
+      const linestopMesinInput = row.querySelector('.linestopmesin-input');
+      const linestopNonMesinInput = row.querySelector('.linestopnonmesin-input');
+      const code = row.querySelector('.activity-code').value;
+      
+      if (dariInput.value && sampaiInput.value) {
+        const dari = new Date(`2000-01-01T${dariInput.value}`);
+        const sampai = new Date(`2000-01-01T${sampaiInput.value}`);
+        
+        let diff = (sampai - dari) / 60000;
+        if (diff < 0) diff += 1440;
+        
+        durasiInput.value = Math.round(diff);
+        activityData[rowId].durasi = Math.round(diff);
+        
+        // Auto-fill Linestop Mesin jika kode 3 dan durasi terisi
+        if (code === '3' && Math.round(diff) > 0) {
+          linestopMesinInput.value = Math.round(diff);
+        }
+        
+        // Auto-fill Linestop Non Mesin jika kode 9 dan durasi terisi
+        if (code === '9' && Math.round(diff) > 0) {
+          linestopNonMesinInput.value = Math.round(diff);
+        }
+        
+        calculateODT();
+        recalculateOutputTargetIfNeeded();
+        calculateOEEMetrics();
+      }
+    }
+    
+    function copyBatchNumberToBatch(rowId) {
+      const row = document.querySelector(`[data-row-id="${rowId}"]`);
+      const batchNumberInput = row.querySelector('.batchnumber-input');
+      const batchInput = row.querySelector('.batch-input');
+      
+      if (batchNumberInput && batchInput) {
+        batchInput.value = batchNumberInput.value;
+      }
+    }
+    
+    function calculateODT() {
+      const rows = document.querySelectorAll('[data-row-id]');
+      let totalODT = 0;
+      
+      // Check if first row has manually entered ODT
+      const firstRow = document.querySelector('[data-row-id="0"]');
+      let firstRowODT = 0;
+      let hasManualFirstRowODT = false;
+      
+      if (firstRow) {
+        const firstODTInput = firstRow.querySelector('.odt-input');
+        if (firstODTInput && firstODTInput.value && !firstODTInput.readOnly) {
+          firstRowODT = parseFloat(firstODTInput.value) || 0;
+          hasManualFirstRowODT = true;
+        }
+      }
+      
+      // Calculate ODT for each row based on code 5, 6, 7, 8
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        const durasi = parseFloat(row.querySelector('.durasi-input').value) || 0;
+        const odtInput = row.querySelector('.odt-input');
+        
+        // Auto-fill ODT when code is 5, 6, 7, or 8 and durasi is filled
+        if (['5', '6', '7', '8'].includes(code) && durasi > 0) {
+          if (odtInput) {
+            odtInput.value = durasi;
+          }
+        }
+      });
+      
+      // Sum all ODT values from all rows for OEE calculation
+      rows.forEach(row => {
+        const odtInput = row.querySelector('.odt-input');
+        if (odtInput && odtInput.value) {
+          totalODT += parseFloat(odtInput.value) || 0;
+        }
+      });
+      
+      calculateDerivedColumns(totalODT);
+    }
+    
+    function calculateDerivedColumns(totalODT) {
+      const rows = document.querySelectorAll('[data-row-id]');
+      const speed = parseFloat(document.getElementById('speed').value) || 0;
+      const shift = document.getElementById('shift').value;
+      const jamKerjaMenit = shiftHoursMapping[shift] || 0;
+      
+      let totalLinestopMesin = 0;
+      let totalLinestopNonMesin = 0;
+      
+      // Calculate totals for linestop
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        const durasi = parseFloat(row.querySelector('.durasi-input').value) || 0;
+        
+        if (code === '3') {
+          totalLinestopMesin += durasi;
+        }
+        
+        if (code === '9') {
+          totalLinestopNonMesin += durasi;
+        }
+      });
+      
+      // RUMUS: JAM KERJA TARGET = JAM KERJA - ODT
+      const jamKerjaTarget = jamKerjaMenit - totalODT;
+      
+      // RUMUS: JAM KERJA AKTUAL = JAM KERJA - (ODT + LINE STOP MESIN + LINE STOP NON MESIN)
+      const jamKerjaAktual = jamKerjaMenit - (totalODT + totalLinestopMesin + totalLinestopNonMesin);
+      
+      // Update ONLY FIRST ROW with JAM KERJA AKTUAL and JAM KERJA TARGET
+      const firstRow = document.querySelector('[data-row-id="0"]');
+      if (firstRow) {
+        const jamKerjaTargetInput = firstRow.querySelector('.jam-kerja-target-input');
+        const jamKerjaAktualInput = firstRow.querySelector('.jam-kerja-aktual-input');
+        
+        if (jamKerjaTargetInput) {
+          jamKerjaTargetInput.value = Math.round(jamKerjaTarget);
+        }
+        
+        if (jamKerjaAktualInput) {
+          jamKerjaAktualInput.value = Math.round(jamKerjaAktual);
+        }
+      }
+      
+      // Clear JAM KERJA AKTUAL and JAM KERJA TARGET for other rows
+      rows.forEach((row, index) => {
+        if (index > 0) {
+          const jamKerjaTargetInput = row.querySelector('.jam-kerja-target-input');
+          const jamKerjaAktualInput = row.querySelector('.jam-kerja-aktual-input');
+          
+          if (jamKerjaTargetInput) {
+            jamKerjaTargetInput.value = '';
+          }
+          
+          if (jamKerjaAktualInput) {
+            jamKerjaAktualInput.value = '';
+          }
+        }
+      });
+      
+      // Update other derived columns for ALL rows
+      rows.forEach((row, index) => {
+        const goodOutput = parseFloat(row.querySelector('.good-output').value) || 0;
+        const afkir = parseFloat(row.querySelector('.afkir').value) || 0;
+        
+        // Output Aktual = Good Output + Afkir
+        const outputAktual = goodOutput + afkir;
+        const outputAktualInput = row.querySelector('.output-aktual-input');
+        if (outputAktualInput) {
+          outputAktualInput.value = Math.round(outputAktual);
+        }
+        
+        // Output Target (Hasil) = Jam Kerja Aktual × Speed - ONLY FIRST ROW
+        const outputTargetHasilInput = row.querySelector('.output-target-hasil-input');
+        if (outputTargetHasilInput) {
+          if (index === 0) {
+            const outputTargetHasil = jamKerjaAktual * speed;
+            outputTargetHasilInput.value = Math.round(outputTargetHasil);
+          } else {
+            outputTargetHasilInput.value = '';
+          }
+        }
+      });
+    }
+
+    function handleActivityCodeChange(rowId) {
+      const row = document.querySelector(`[data-row-id="${rowId}"]`);
+      if (!row) {
+        console.error('Row not found:', rowId);
+        return;
+      }
+      
+      const code = row.querySelector('.activity-code').value;
+      const minorstopInput = row.querySelector('.minorstop-input');
+      const disposisiInput = row.querySelector('.disposisi-input');
+      const aktivitasSelect = row.querySelector('.aktivitas-input');
+      const linestopMesinInput = row.querySelector('.linestopmesin-input');
+      const linestopNonMesinInput = row.querySelector('.linestopnonmesin-input');
+      const durasiInput = row.querySelector('.durasi-input');
+      
+      // Initialize activityData if needed
+      if (!activityData[rowId]) {
+        activityData[rowId] = {};
+      }
+      
+      activityData[rowId].code = code;
+      
+      // Recalculate ODT when code changes
+      calculateODT();
+      
+      // Get current line and machine
+      const line = document.getElementById('line').value;
+      const machine = document.getElementById('jenisMesin').value;
+      
+      console.log('🔍 handleActivityCodeChange:', { rowId, code, line, machine });
+      
+      // Rebuild aktivitas dropdown based on code-line-machine
+      updateActivityDropdownForRow(row, code, line, machine);
+      
+      // Auto-fill Linestop Mesin untuk kode 3 (Breakdown)
+      const durasi = parseFloat(durasiInput.value) || 0;
+      if (code === '3') {
+        if (durasi > 0) {
+          linestopMesinInput.value = durasi;
+        }
+      } else {
+        linestopMesinInput.value = '';
+      }
+      
+      // Auto-fill Linestop Non Mesin untuk kode 9
+      if (code === '9') {
+        if (durasi > 0) {
+          linestopNonMesinInput.value = durasi;
+        }
+      } else {
+        linestopNonMesinInput.value = '';
+      }
+      
+      if (code === '1') {
+        minorstopInput.classList.add('bg-yellow-50');
+        minorstopInput.placeholder = 'Wajib diisi untuk Minorstop';
+      } else {
+        minorstopInput.classList.remove('bg-yellow-50');
+        minorstopInput.placeholder = '';
+      }
+      
+      if (code === '3' || code === '9') {
+        disposisiInput.classList.add('bg-yellow-50');
+        disposisiInput.placeholder = 'Wajib diisi';
+      } else {
+        disposisiInput.classList.remove('bg-yellow-50');
+        disposisiInput.placeholder = '';
+      }
+      
+      recalculateOutputTargetIfNeeded();
+      calculateOEEMetrics();
+    }
+    
+    function updateActivityDropdownForRow(row, code, line, machine) {
+      const aktivitasSelect = row.querySelector('.aktivitas-input');
+      const currentValue = aktivitasSelect.value;
+      
+      console.log('📋 updateActivityDropdownForRow:', { 
+        code, 
+        line, 
+        machine, 
+        currentValue,
+        hasCode: !!code,
+        hasLine: !!line,
+        hasMachine: !!machine
+      });
+      
+      // Clear dropdown
+      aktivitasSelect.innerHTML = '<option value="">Pilih Aktivitas</option>';
+      
+      // Step 1: ALWAYS add default activity if code is selected
+      if (code && activityCodes[code]) {
+        const defaultActivity = activityCodes[code];
+        const defaultOption = document.createElement('option');
+        defaultOption.value = defaultActivity;
+        defaultOption.textContent = defaultActivity;
+        aktivitasSelect.appendChild(defaultOption);
+        
+        console.log('✅ Added default activity:', defaultActivity);
+        
+        // Auto-select default if no previous value
+        if (!currentValue) {
+          aktivitasSelect.value = defaultActivity;
+          console.log('🔵 Auto-selected default activity');
+        }
+      }
+      
+      // Step 2: Add structured activities ONLY if kode+line+machine all selected
+      if (code && line && machine) {
+        const key = getActivityKey(code, line, machine);
+        const activities = structuredActivities[key] || [];
+        
+        console.log('🔍 Checking structured activities:', { 
+          key, 
+          activitiesCount: activities.length,
+          activities: activities.map(a => a.name)
+        });
+        
+        if (activities.length > 0) {
+          // Add separator
+          const separator = document.createElement('option');
+          separator.disabled = true;
+          separator.textContent = `──── ${line} / ${machine} ────`;
+          aktivitasSelect.appendChild(separator);
+          
+          // Add custom activities
+          activities.forEach(activity => {
+            const option = document.createElement('option');
+            option.value = activity.name;
+            option.textContent = activity.name;
+            aktivitasSelect.appendChild(option);
+          });
+          
+          console.log('✅ Added custom activities:', activities.length);
+        } else {
+          console.log('⚠️ No custom activities found for key:', key);
+        }
+      } else {
+        console.log('⚠️ Not all required fields selected (code, line, machine)');
+      }
+      
+      // Step 3: Restore previous value if it still exists
+      if (currentValue && currentValue !== '') {
+        const optionExists = Array.from(aktivitasSelect.options).some(opt => opt.value === currentValue);
+        if (optionExists) {
+          aktivitasSelect.value = currentValue;
+          console.log('✅ Restored previous value:', currentValue);
+        } else {
+          console.log('⚠️ Previous value not found in options:', currentValue);
+        }
+      }
+      
+      console.log('📊 Final dropdown options:', aktivitasSelect.options.length);
+    }
+    
+    function updateAllActivityDropdowns() {
+      // Update all activity dropdowns in the table when line or machine changes
+      const line = document.getElementById('line').value;
+      const machine = document.getElementById('jenisMesin').value;
+      
+      const rows = document.querySelectorAll('[data-row-id]');
+      
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        updateActivityDropdownForRow(row, code, line, machine);
+      });
+    }
+
+    function recalculateOutputTargetIfNeeded() {
+      recalculateOutputTarget365();
+      calculateOEEMetrics();
+    }
+
+    function recalculateOutputTarget365() {
+      const speed = parseFloat(document.getElementById('speed').value) || 0;
+      const shift = document.getElementById('shift').value;
+      const jamKerjaMenit = shiftHoursMapping[shift] || 0;
+      
+      const outputTarget365 = speed * jamKerjaMenit;
+      
+      const rows = document.querySelectorAll('[data-row-id]');
+      rows.forEach(row => {
+        const output365Input = row.querySelector('.output-target-365');
+        if (output365Input) {
+          output365Input.value = Math.round(outputTarget365);
+        }
+      });
+    }
+
+    function deleteActivityRow(rowId) {
+      const row = document.querySelector(`[data-row-id="${rowId}"]`);
+      if (row) {
+        row.remove();
+        delete activityData[rowId];
+        calculateOEEMetrics();
+      }
+    }
+
+    function clearAllActivityRows() {
+      const tbody = document.getElementById('activityTableBody');
+      tbody.innerHTML = '';
+      activityData = [];
+      rowCounter = 0;
+      calculateOEEMetrics();
+      addActivityRow();
+    }
+
+    function calculateOEEMetrics() {
+      const speed = parseFloat(document.getElementById('speed').value) || 0;
+      const shift = document.getElementById('shift').value;
+      const jamKerjaMenit = shiftHoursMapping[shift] || 0;
+      
+      if (jamKerjaMenit === 0 || speed === 0) {
+        updatePreviewOEEMetrics(0, 0, 0, 0, 0, 0, 0, 0);
+        return;
+      }
+      
+      let totalODT = 0;
+      let totalLinestopMesin = 0;
+      let totalLinestopNonMesin = 0;
+      let totalGoodOutput = 0;
+      let totalAfkir = 0;
+      
+      const rows = document.querySelectorAll('[data-row-id]');
+      
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        const durasi = parseFloat(row.querySelector('.durasi-input').value) || 0;
+        const goodOutput = parseFloat(row.querySelector('.good-output').value) || 0;
+        const afkir = parseFloat(row.querySelector('.afkir').value) || 0;
+        const odtInput = row.querySelector('.odt-input');
+        
+        // Sum all ODT values from all rows
+        if (odtInput && odtInput.value) {
+          totalODT += parseFloat(odtInput.value) || 0;
+        }
+        
+        // Linestop Mesin = kode 3
+        if (code === '3') {
+          totalLinestopMesin += durasi;
+        }
+        
+        // Linestop Non Mesin = kode 9
+        if (code === '9') {
+          totalLinestopNonMesin += durasi;
+        }
+        
+        totalGoodOutput += goodOutput;
+        totalAfkir += afkir;
+      });
+      
+      // Jam Kerja Target = Jam Kerja - ODT
+      const jamKerjaTarget = jamKerjaMenit - totalODT;
+      
+      // Jam Kerja Aktual = Jam Kerja - (ODT + Linestop Mesin + Linestop Non Mesin)
+      const jamKerjaAktual = jamKerjaMenit - (totalODT + totalLinestopMesin + totalLinestopNonMesin);
+      
+      // Output Aktual = Good Output + Afkir
+      const outputAktual = totalGoodOutput + totalAfkir;
+      
+      // Output Target = Jam Kerja Aktual × Speed
+      const outputTarget = jamKerjaAktual * speed;
+      
+      // OEE Calculation
+      // Availability = Jam Kerja Aktual / Jam Kerja Target × 100%
+      const av = jamKerjaTarget > 0 ? (jamKerjaAktual / jamKerjaTarget) * 100 : 0;
+      
+      // Performance = Output Aktual / Output Target × 100%
+      const pe = outputTarget > 0 ? (outputAktual / outputTarget) * 100 : 0;
+      
+      // Quality Rate = Good Output / Output Aktual × 100%
+      const qr = outputAktual > 0 ? (totalGoodOutput / outputAktual) * 100 : 0;
+      
+      // OEE = Availability × Performance × Quality Rate
+      const oee = (av * pe * qr) / 10000;
+      
+      // OEE 365 Calculation
+      // AV 365 = Jam Kerja Aktual / Jam Kerja × 100%
+      const av365 = jamKerjaMenit > 0 ? (jamKerjaAktual / jamKerjaMenit) * 100 : 0;
+      
+      // Output Target 365 = Jam Kerja × Speed
+      const outputTarget365 = jamKerjaMenit * speed;
+      
+      // PE 365 = Output Aktual / Output Target 365 × 100%
+      const pe365 = outputTarget365 > 0 ? (outputAktual / outputTarget365) * 100 : 0;
+      
+      // QR 365 = Good Output / Output Aktual × 100%
+      const qr365 = outputAktual > 0 ? (totalGoodOutput / outputAktual) * 100 : 0;
+      
+      // OEE 365 = AV 365 × PE 365 × QR 365 (sudah dalam persen)
+      const oee365 = (av365 / 100) * (pe365 / 100) * (qr365 / 100) * 100;
+      
+      updatePreviewOEEMetrics(oee, av, pe, qr, oee365, av365, pe365, qr365);
+    }
+
+    function updatePreviewOEEMetrics(oee, av, pe, qr, oee365, av365, pe365, qr365) {
+      document.getElementById('previewOEE').textContent = oee.toFixed(1) + '%';
+      document.getElementById('previewAV').textContent = av.toFixed(1) + '%';
+      document.getElementById('previewPE').textContent = pe.toFixed(1) + '%';
+      document.getElementById('previewQR').textContent = qr.toFixed(1) + '%';
+      
+      document.getElementById('previewOEE365').textContent = oee365.toFixed(1) + '%';
+      document.getElementById('previewAV365').textContent = av365.toFixed(1) + '%';
+      document.getElementById('previewPE365').textContent = pe365.toFixed(1) + '%';
+      document.getElementById('previewQR365').textContent = qr365.toFixed(1) + '%';
+      
+      applyColorCoding('oeeCard', oee);
+      applyColorCoding('avCard', av);
+      applyColorCoding('peCard', pe);
+      applyColorCoding('qrCard', qr);
+      
+      applyColorCoding('oee365Card', oee365);
+      applyColorCoding('av365Card', av365);
+      applyColorCoding('pe365Card', pe365);
+      applyColorCoding('qr365Card', qr365);
+    }
+
+    function applyColorCoding(cardId, value) {
+      const card = document.getElementById(cardId);
+      
+      card.classList.remove('bg-green-100', 'bg-blue-100', 'bg-yellow-100', 'bg-red-100');
+      
+      if (value >= 85) {
+        card.classList.add('bg-green-100');
+      } else if (value >= 70) {
+        card.classList.add('bg-blue-100');
+      } else if (value >= 50) {
+        card.classList.add('bg-yellow-100');
+      } else {
+        card.classList.add('bg-red-100');
+      }
+    }
+
+    function togglePreviewTable() {
+      const container = document.getElementById('previewTableContainer');
+      const toggleText = document.getElementById('previewToggleText');
+      
+      if (container.classList.contains('hidden')) {
+        refreshPreviewTable();
+        container.classList.remove('hidden');
+        toggleText.textContent = 'Sembunyikan Preview';
+      } else {
+        container.classList.add('hidden');
+        toggleText.textContent = 'Tampilkan Preview';
+      }
+    }
+
+    function refreshPreviewTable() {
+      const tbody = document.getElementById('previewTableBody');
+      tbody.innerHTML = '';
+      
+      const tanggal = document.getElementById('tanggal').value || '-';
+      const line = document.getElementById('line').value || '-';
+      const mesin = document.getElementById('jenisMesin').value || '-';
+      const shift = document.getElementById('shift').value || '-';
+      
+      const rows = document.querySelectorAll('[data-row-id]');
+      
+      if (rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="11" class="border border-gray-300 px-4 py-8 text-center text-gray-500">Belum ada data aktivitas</td></tr>';
+        return;
+      }
+      
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        const tkl = row.querySelector('.jumlah-tkl').value || '-';
+        const dari = row.querySelector('.dari-time').value || '-';
+        const sampai = row.querySelector('.sampai-time').value || '-';
+        const durasi = row.querySelector('.durasi-input').value || '-';
+        const goodOutput = row.querySelector('.good-output').value || '-';
+        const afkir = row.querySelector('.afkir').value || '-';
+        
+        if (code) {
+          const previewRow = document.createElement('tr');
+          previewRow.className = 'hover:bg-gray-50';
+          previewRow.innerHTML = `
+            <td class="border border-gray-300 px-2 py-2">${tanggal}</td>
+            <td class="border border-gray-300 px-2 py-2">${line}</td>
+            <td class="border border-gray-300 px-2 py-2">${mesin}</td>
+            <td class="border border-gray-300 px-2 py-2">${shift}</td>
+            <td class="border border-gray-300 px-2 py-2">${code} - ${activityCodes[code] || ''}</td>
+            <td class="border border-gray-300 px-2 py-2">${tkl}</td>
+            <td class="border border-gray-300 px-2 py-2">${dari}</td>
+            <td class="border border-gray-300 px-2 py-2">${sampai}</td>
+            <td class="border border-gray-300 px-2 py-2">${durasi} menit</td>
+            <td class="border border-gray-300 px-2 py-2">${goodOutput}</td>
+            <td class="border border-gray-300 px-2 py-2">${afkir}</td>
+          `;
+          tbody.appendChild(previewRow);
+        }
+      });
+    }
+
+    async function saveData() {
+      const tanggal = document.getElementById('tanggal').value;
+      const line = document.getElementById('line').value;
+      const shift = document.getElementById('shift').value;
+      const operator = document.getElementById('operator').value;
+      const mesin = document.getElementById('jenisMesin').value;
+      const speed = document.getElementById('speed').value;
+      
+      if (!tanggal) {
+        showValidationMessage('Tanggal harus diisi!');
+        return;
+      }
+      
+      if (!line) {
+        showValidationMessage('Line Mesin harus dipilih!');
+        return;
+      }
+      
+      if (!shift) {
+        showValidationMessage('Shift harus dipilih!');
+        return;
+      }
+      
+      if (!operator) {
+        showValidationMessage('Nama Operator harus diisi!');
+        return;
+      }
+      
+      if (!speed || parseFloat(speed) <= 0) {
+        showValidationMessage('Speed harus diisi dengan nilai yang valid!');
+        return;
+      }
+      
+      const rows = document.querySelectorAll('[data-row-id]');
+      let hasCompleteRow = false;
+      
+      const activities = [];
+      
+      rows.forEach(row => {
+        const code = row.querySelector('.activity-code').value;
+        const tkl = row.querySelector('.jumlah-tkl').value;
+        const dari = row.querySelector('.dari-time').value;
+        const sampai = row.querySelector('.sampai-time').value;
+        const durasi = row.querySelector('.durasi-input').value;
+        const aktivitas = row.querySelector('.aktivitas-input').value;
+        const disposisi = row.querySelector('.disposisi-input').value;
+        const schedule = row.querySelector('.schedule-input').value;
+        const batchNumber = row.querySelector('.batchnumber-input').value;
+        const goodOutput = row.querySelector('.good-output').value;
+        const afkir = row.querySelector('.afkir').value;
+        const linestopMesin = row.querySelector('.linestopmesin-input').value;
+        const linestopNonMesin = row.querySelector('.linestopnonmesin-input').value;
+        const jamKerja = row.querySelector('.jam-kerja-input').value;
+        const odt = row.querySelector('.odt-input').value;
+        const outputTarget365 = row.querySelector('.output-target-365').value;
+        const batch = row.querySelector('.batch-input').value;
+        const satuan = row.querySelector('.satuan-input').value;
+        const keterangan = row.querySelector('.keterangan-input').value;
+        const minorstop = row.querySelector('.minorstop-input').value;
+        
+        if (code && dari && sampai) {
+          hasCompleteRow = true;
+          
+          activities.push({
+            kode_kegiatan: code,
+            nama_kegiatan: activityCodes[code],
+            jumlah_tkl: tkl,
+            dari: dari,
+            sampai: sampai,
+            durasi_menit: durasi,
+            aktivitas: aktivitas,
+            disposisi_no_wr: disposisi,
+            nomor_schedule: schedule,
+            batch_number: batchNumber,
+            good_output: goodOutput,
+            afkir: afkir,
+            linestop_mesin: linestopMesin,
+            linestop_non_mesin: linestopNonMesin,
+            jam_kerja: jamKerja,
+            odt: odt,
+            output_target_365: outputTarget365,
+            batch: batch,
+            satuan: satuan,
+            keterangan: keterangan,
+            minorstop: minorstop
+          });
+        }
+      });
+      
+      if (!hasCompleteRow) {
+        showValidationMessage('Minimal satu baris aktivitas harus lengkap (Kode Kegiatan, Dari, Sampai)!');
+        return;
+      }
+      
+      const jamKerjaMenit = shiftHoursMapping[shift] || 0;
+      const speedValue = parseFloat(speed);
+      
+      let totalProduksiDurasi = 0;
+      let totalDowntime = 0;
+      let totalGoodOutput = 0;
+      let totalAfkir = 0;
+      
+      activities.forEach(activity => {
+        const durasi = parseFloat(activity.durasi_menit) || 0;
+        const goodOut = parseFloat(activity.good_output) || 0;
+        const afkirVal = parseFloat(activity.afkir) || 0;
+        
+        if (activity.kode_kegiatan === '2') {
+          totalProduksiDurasi += durasi;
+        } else if (activity.kode_kegiatan === '3' || activity.kode_kegiatan === '1') {
+          totalDowntime += durasi;
+        }
+        
+        totalGoodOutput += goodOut;
+        totalAfkir += afkirVal;
+      });
+      
+      const plannedProductionTime = jamKerjaMenit;
+      const operatingTime = plannedProductionTime - totalDowntime;
+      
+      const av = plannedProductionTime > 0 ? (operatingTime / plannedProductionTime) * 100 : 0;
+      const idealOutput = operatingTime * speedValue;
+      const pe = idealOutput > 0 ? (totalGoodOutput / idealOutput) * 100 : 0;
+      const totalOutput = totalGoodOutput + totalAfkir;
+      const qr = totalOutput > 0 ? (totalGoodOutput / totalOutput) * 100 : 0;
+      const oee = (av * pe * qr) / 10000;
+      
+      const av365 = plannedProductionTime > 0 ? (operatingTime / plannedProductionTime) * 100 : 0;
+      const idealOutput365 = plannedProductionTime * speedValue;
+      const pe365 = idealOutput365 > 0 ? (totalGoodOutput / idealOutput365) * 100 : 0;
+      const qr365 = qr;
+      const oee365 = (av365 / 100) * (pe365 / 100) * (qr365 / 100) * 100;
+      
+      const dataToSave = {
+        tanggal: tanggal,
+        tanggal_formatted: formatDateDisplay(tanggal),
+        line_mesin: line,
+        jenis_mesin: mesin,
+        shift: shift,
+        operator: operator,
+        speed: speedValue,
+        jam_kerja_menit: jamKerjaMenit,
+        aktivitas: activities,
+        summary: {
+          total_good_output: totalGoodOutput,
+          total_afkir: totalAfkir,
+          total_durasi_produksi: totalProduksiDurasi,
+          total_downtime: totalDowntime,
+          oee: oee.toFixed(2),
+          availability: av.toFixed(2),
+          performance: pe.toFixed(2),
+          quality_rate: qr.toFixed(2),
+          oee_365: oee365.toFixed(2),
+          av_365: av365.toFixed(2),
+          pe_365: pe365.toFixed(2),
+          qr_365: qr365.toFixed(2)
+        },
+        timestamp: new Date().toISOString()
+      };
+      
+      // Save to simulated database
+      savedDataRecords.push(dataToSave);
+      
+      console.log('=== DATA OEE MONITORING BERHASIL DISIMPAN ===');
+      console.log(JSON.stringify(dataToSave, null, 2));
+      
+      // Try to send to Google Sheets
+      if (googleSheetsConfig.apiKey && googleSheetsConfig.spreadsheetId) {
+        showSuccessMessage('Menyimpan data ke Google Sheets...');
+        await sendToGoogleSheets(dataToSave);
+      } else {
+        showSuccessMessage(`Data berhasil disimpan!
+        
+Ringkasan:
+• Tanggal: ${formatDateDisplay(tanggal)}
+• Line: ${line} - ${mesin}
+• Shift: ${shift}
+• Operator: ${operator}
+• Total Aktivitas: ${activities.length}
+• OEE: ${oee.toFixed(1)}% | OEE 365: ${oee365.toFixed(1)}%
+• Availability: ${av.toFixed(1)}% | AV 365: ${av365.toFixed(1)}%
+• Performance: ${pe.toFixed(1)}% | PE 365: ${pe365.toFixed(1)}%
+• Quality Rate: ${qr.toFixed(1)}% | QR 365: ${qr365.toFixed(1)}%
+
+⚠️ Google Sheets belum dikonfigurasi. Klik "Pengaturan Google Sheets" untuk menyimpan ke cloud.`);
+      }
+      
+      setTimeout(() => {
+        clearForm();
+      }, 3000);
+    }
+    
+    async function sendToGoogleSheets(data) {
+      try {
+        // Prepare data rows for Google Sheets with new column order
+        const sheetRows = [];
+        
+        data.aktivitas.forEach(activity => {
+          const row = [
+            data.tanggal_formatted,              // TANGGAL
+            data.jenis_mesin,                    // Jenis Mesin
+            data.line_mesin,                     // LINE
+            data.shift,                          // Shift
+            data.operator,                       // OPERATOR
+            activity.nama_kegiatan,              // TYPE
+            activity.aktivitas,                  // DESCRIPTION
+            activity.jam_kerja,                  // JAM KERJA
+            data.speed,                          // SPEED
+            activity.good_output,                // GOOD OUTPUT
+            activity.afkir,                      // AFKIR
+            activity.batch_number,               // BATCH NUMBER
+            activity.odt,                        // ODT
+            activity.linestop_mesin,             // LINESTOP MESIN
+            activity.linestop_non_mesin,         // LINESTOP NON MESIN
+            activity.minorstop,                  // MINORSTOP
+            activity.keterangan,                 // KETERANGAN
+            activity.output_target_365,          // OUTPUT TARGET 365
+            activity.satuan,                     // SATUAN
+            activity.batch,                      // BATCH
+            activity.kode_kegiatan,              // KODE KEGIATAN
+            activity.nomor_schedule,             // NO. SCHEDULE
+            activity.dari,                       // MULAI
+            activity.sampai,                     // SAMPAI
+            activity.durasi_menit,               // DURASI
+            activity.jumlah_tkl,                 // JML TKL
+            data.summary.oee,                    // OEE
+            data.summary.availability,           // AVAILABILITY
+            data.summary.performance,            // PERFORMANCE
+            data.summary.quality_rate,           // QUALITY RATE
+            data.summary.oee_365,                // OEE 365
+            data.summary.av_365,                 // AV 365
+            data.summary.pe_365,                 // PE 365
+            data.summary.qr_365,                 // QR 365
+            data.timestamp                       // TIMESTAMP
+          ];
+          
+          sheetRows.push(row);
+        });
+        
+        // Append to Google Sheets
+        const range = `${googleSheetsConfig.sheetName}!A:AJ`;
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${googleSheetsConfig.spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&key=${googleSheetsConfig.apiKey}`;
+        
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            values: sheetRows
+          })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          showSuccessMessage(`✅ Data berhasil disimpan ke Google Sheets!
+          
+Ringkasan:
+• Tanggal: ${data.tanggal_formatted}
+• Line: ${data.line_mesin} - ${data.jenis_mesin}
+• Shift: ${data.shift}
+• Operator: ${data.operator}
+• Total Aktivitas: ${data.aktivitas.length}
+• OEE: ${data.summary.oee}% | OEE 365: ${data.summary.oee_365}%
+• Rows ditambahkan: ${result.updates.updatedRows}
+
+Data telah tersimpan di Google Sheets Anda! 🎉`);
+        } else {
+          const error = await response.json();
+          showValidationMessage(`❌ Gagal menyimpan ke Google Sheets: ${error.error.message}`);
+        }
+      } catch (error) {
+        showValidationMessage(`❌ Error saat menyimpan ke Google Sheets: ${error.message}`);
+      }
+    }
+
+    function showValidationMessage(message) {
+      const existingMessage = document.getElementById('validationMessage');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.id = 'validationMessage';
+      messageDiv.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-md text-center';
+      messageDiv.textContent = message;
+      
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 4000);
+    }
+
+    function showSuccessMessage(message) {
+      const existingMessage = document.getElementById('successMessage');
+      if (existingMessage) {
+        existingMessage.remove();
+      }
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.id = 'successMessage';
+      messageDiv.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg z-50 max-w-lg text-center whitespace-pre-line';
+      messageDiv.textContent = message;
+      
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 5000);
+    }
+
+    function clearForm() {
+      document.getElementById('tanggal').value = '';
+      document.getElementById('line').value = '';
+      document.getElementById('jenisMesin').innerHTML = '<option value="">Pilih Mesin</option>';
+      document.getElementById('shift').value = '';
+      document.getElementById('operator').value = '';
+      document.getElementById('speed').value = '';
+      
+      clearAllActivityRows();
+      
+      document.getElementById('previewTableContainer').classList.add('hidden');
+      document.getElementById('previewToggleText').textContent = 'Tampilkan Preview';
+      
+      updatePreviewOEEMetrics(0, 0, 0, 0, 0, 0, 0, 0);
+      
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'fixed top-24 left-1/2 transform -translate-x-1/2 bg-blue-500 text-white px-6 py-4 rounded-lg shadow-lg z-50';
+      messageDiv.textContent = 'Form telah direset!';
+      document.body.appendChild(messageDiv);
+      
+      setTimeout(() => {
+        messageDiv.remove();
+      }, 2000);
+    }
+
+    function toggleColumnSelector() {
+      const panel = document.getElementById('columnSelectorPanel');
+      if (panel.classList.contains('hidden')) {
+        panel.classList.remove('hidden');
+      } else {
+        panel.classList.add('hidden');
+      }
+    }
+
+    function toggleColumn(columnName) {
+      const checkbox = document.querySelector(`[data-column="${columnName}"]`);
+      const isVisible = checkbox.checked;
+      
+      const headerCells = document.querySelectorAll(`.col-${columnName}`);
+      
+      headerCells.forEach(cell => {
+        if (isVisible) {
+          cell.style.display = '';
+        } else {
+          cell.style.display = 'none';
+        }
+      });
+    }
+
+    function showAllColumns() {
+      const checkboxes = document.querySelectorAll('.column-toggle');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+        const columnName = checkbox.getAttribute('data-column');
+        const cells = document.querySelectorAll(`.col-${columnName}`);
+        cells.forEach(cell => {
+          cell.style.display = '';
+        });
+      });
+    }
+
+    function hideAllColumns() {
+      const checkboxes = document.querySelectorAll('.column-toggle');
+      checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+        const columnName = checkbox.getAttribute('data-column');
+        const cells = document.querySelectorAll(`.col-${columnName}`);
+        cells.forEach(cell => {
+          cell.style.display = 'none';
+        });
+      });
+    }
+
+    // === IMPORT XLS FUNCTIONS ===
+    let xlsImportData = [];
+    
+    function openImportXLSModal() {
+      document.getElementById('importXLSModal').classList.remove('hidden');
+      resetImportXLSModal();
+    }
+    
+    function closeImportXLSModal() {
+      document.getElementById('importXLSModal').classList.add('hidden');
+      resetImportXLSModal();
+    }
+    
+    function resetImportXLSModal() {
+      document.getElementById('xlsFileInput').value = '';
+      document.getElementById('xlsPreviewContainer').classList.add('hidden');
+      document.getElementById('xlsPreviewTableBody').innerHTML = '';
+      document.getElementById('importXLSButton').disabled = true;
+      xlsImportData = [];
+    }
+    
+    function handleXLSFileSelect(event) {
+      const file = event.target.files[0];
+      
+      if (!file) {
+        return;
+      }
+      
+      const reader = new FileReader();
+      
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          
+          // Get first sheet
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          
+          // Convert to JSON
+          const jsonData = XLSX.utils.sheet_to_json(worksheet);
+          
+          if (jsonData.length === 0) {
+            showValidationMessage('File Excel kosong atau tidak memiliki data!');
+            return;
+          }
+          
+          processXLSData(jsonData);
+        } catch (error) {
+          showValidationMessage('Gagal membaca file Excel: ' + error.message);
+        }
+      };
+      
+      reader.readAsArrayBuffer(file);
+    }
+    
+    function processXLSData(jsonData) {
+      xlsImportData = [];
+      const previewTableBody = document.getElementById('xlsPreviewTableBody');
+      previewTableBody.innerHTML = '';
+      
+      let validCount = 0;
+      let errorCount = 0;
+      
+      jsonData.forEach((row, index) => {
+        const kode = String(row['Kode Kegiatan'] || row['Kode'] || '').trim();
+        const line = String(row['Line'] || '').trim();
+        const mesin = String(row['Mesin'] || '').trim();
+        const namaAktivitas = String(row['Nama Aktivitas'] || row['Aktivitas'] || '').trim();
+        
+        let status = '';
+        let statusClass = '';
+        let isValid = true;
+        
+        // Validation
+        if (!kode || !['1', '2', '3', '5', '6', '7', '8', '9'].includes(kode)) {
+          status = 'Kode tidak valid';
+          statusClass = 'text-red-600';
+          isValid = false;
+        } else if (!line || !machineMapping[line]) {
+          status = 'Line tidak terdaftar';
+          statusClass = 'text-red-600';
+          isValid = false;
+        } else if (!mesin || !machineMapping[line].includes(mesin)) {
+          status = 'Mesin tidak terdaftar di line ini';
+          statusClass = 'text-red-600';
+          isValid = false;
+        } else if (!namaAktivitas) {
+          status = 'Nama aktivitas kosong';
+          statusClass = 'text-red-600';
+          isValid = false;
+        } else {
+          // Check if already exists
+          const key = getActivityKey(kode, line, mesin);
+          const existingActivities = structuredActivities[key] || [];
+          const duplicate = existingActivities.find(a => a.name === namaAktivitas);
+          
+          if (duplicate) {
+            status = 'Sudah ada (akan dilewati)';
+            statusClass = 'text-yellow-600';
+            isValid = false;
+          } else {
+            status = '✓ Valid';
+            statusClass = 'text-green-600';
+          }
+        }
+        
+        if (isValid) {
+          validCount++;
+          xlsImportData.push({
+            kode: kode,
+            line: line,
+            mesin: mesin,
+            namaAktivitas: namaAktivitas
+          });
+        } else {
+          errorCount++;
+        }
+        
+        // Add to preview table
+        const tr = document.createElement('tr');
+        tr.className = isValid ? 'bg-green-50' : 'bg-red-50';
+        tr.innerHTML = `
+          <td class="border border-gray-300 px-2 py-1 text-center">${index + 1}</td>
+          <td class="border border-gray-300 px-2 py-1 text-center">${kode}</td>
+          <td class="border border-gray-300 px-2 py-1">${line}</td>
+          <td class="border border-gray-300 px-2 py-1">${mesin}</td>
+          <td class="border border-gray-300 px-2 py-1">${namaAktivitas}</td>
+          <td class="border border-gray-300 px-2 py-1 ${statusClass} font-medium">${status}</td>
+        `;
+        previewTableBody.appendChild(tr);
+      });
+      
+      // Update counts
+      document.getElementById('xlsTotalCount').textContent = jsonData.length;
+      document.getElementById('xlsValidCount').textContent = validCount;
+      document.getElementById('xlsErrorCount').textContent = errorCount;
+      
+      // Show preview
+      document.getElementById('xlsPreviewContainer').classList.remove('hidden');
+      
+      // Enable import button if there's valid data
+      document.getElementById('importXLSButton').disabled = validCount === 0;
+    }
+    
+    function importXLSData() {
+      if (xlsImportData.length === 0) {
+        showValidationMessage('Tidak ada data valid untuk diimport!');
+        return;
+      }
+      
+      let importedCount = 0;
+      
+      xlsImportData.forEach(data => {
+        const key = getActivityKey(data.kode, data.line, data.mesin);
+        
+        if (!structuredActivities[key]) {
+          structuredActivities[key] = [];
+        }
+        
+        // Double-check for duplicates (should not happen after validation, but just in case)
+        const duplicate = structuredActivities[key].find(a => a.name === data.namaAktivitas);
+        
+        if (!duplicate) {
+          structuredActivities[key].push({
+            name: data.namaAktivitas,
+            detailCode: ''
+          });
+          importedCount++;
+        }
+      });
+      
+      saveStructuredActivities();
+      
+      showSuccessMessage(`✅ Berhasil mengimport ${importedCount} aktivitas dari file Excel!`);
+      
+      closeImportXLSModal();
+      
+      // Refresh the activities list if modal is open
+      const kode = document.getElementById('activityKodeSelect').value;
+      const line = document.getElementById('activityLineSelect').value;
+      const machine = document.getElementById('activityMachineSelect').value;
+      
+      if (kode && line && machine) {
+        loadStructuredActivities();
+      }
+    }
+
+
+  </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa871e3b3616d10',t:'MTc2NTE1Njg3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
