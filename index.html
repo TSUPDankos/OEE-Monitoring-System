@@ -2884,7 +2884,58 @@ Data telah tersimpan di Google Sheets Anda! 🎉`);
     }
 
 
+
+   function sendToSheet() {
+    const payload = {
+        tanggal: document.getElementById("tanggal").value,
+        jenisMesin: document.getElementById("jenisMesin").value,
+        line: document.getElementById("line").value,
+        shift: document.getElementById("shift").value,
+        operator: document.getElementById("operator").value,
+        type: document.getElementById("type").value,
+        description: document.getElementById("description").value,
+        jamKerja: document.getElementById("jamKerja").value,
+        speed: document.getElementById("speed").value,
+        goodOutput: document.getElementById("goodOutput").value,
+        afkir: document.getElementById("afkir").value,
+        batchNumber: document.getElementById("batchNumber").value,
+        odt: document.getElementById("odt").value,
+        linestopMesin: document.getElementById("linestopMesin").value,
+        linestopNonMesin: document.getElementById("linestopNonMesin").value,
+        minorstop: document.getElementById("minorstop").value,
+        keterangan: document.getElementById("keterangan").value,
+        outputTarget: document.getElementById("outputTarget").value,
+        outputTarget365: document.getElementById("outputTarget365").value,
+        satuan: document.getElementById("satuan").value,
+        batch: document.getElementById("batch").value,
+        kodeKegiatan: document.getElementById("kodeKegiatan").value,
+        noSchedule: document.getElementById("noSchedule").value,
+        mulai: document.getElementById("mulai").value,
+        sampai: document.getElementById("sampai").value,
+        jmlTkl: document.getElementById("jmlTkl").value
+    };
+
+    fetch("https://script.google.com/macros/s/AKfycbzTh5uzTJ3tfGDMI1HuM3pdh1mZkaE3u7VzLd6QqkX7AAJDwQTqV_c-LOHYgoOV8zUz/exec", {
+        method: "POST",
+        body: JSON.stringify(payload),
+        headers: { "Content-Type": "application/json" }
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.status === "success") {
+            alert("Data berhasil disimpan!");
+        } else {
+            alert("Gagal: " + result.message);
+        }
+    })
+    .catch(err => {
+        alert("Error: " + err);
+    });
+}
+
+
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa871e3b3616d10',t:'MTc2NTE1Njg3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
