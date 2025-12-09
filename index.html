@@ -2761,7 +2761,14 @@ Data telah tersimpan di Google Sheets Anda! 🎉`);
     return allData;
 }
 
-   function sendToSheet() {
+// GANTI DENGAN URL WEB APP GOOGLE APPS SCRIPT ANDA
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbzTh5uzTJ3tfGDMI1HuM3pdh1mZkaE3u7VzLd6QqkX7AAJDwQTqV_c-LOHYgoOV8zUz/exec";
+
+function sendToSheet() {
+    const messageElement = document.getElementById("message");
+    messageElement.textContent = "Mengirim data...";
+    
+    // Objek payload dari semua field input
     const payload = {
         tanggal: document.getElementById("tanggal").value,
         jenisMesin: document.getElementById("jenisMesin").value,
@@ -2791,21 +2798,36 @@ Data telah tersimpan di Google Sheets Anda! 🎉`);
         jmlTkl: document.getElementById("jmlTkl").value
     };
 
-    fetch("https://script.google.com/macros/s/AKfycbzTh5uzTJ3tfGDMI1HuM3pdh1mZkaE3u7VzLd6QqkX7AAJDwQTqV_c-LOHYgoOV8zUz/exec", {
+    // Konversi payload ke FormData
+    const formData = new FormData();
+    for (const key in payload) {
+        formData.append(key, payload[key]);
+    }
+    
+    // Kirim data menggunakan Fetch
+    fetch(WEB_APP_URL, {
         method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" }
+        body: formData // Mengirim FormData
+        // Header "Content-Type" akan diatur secara otomatis oleh browser
     })
-    .then(res => res.json())
+    .then(res => {
+        if (!res.ok) {
+            throw new Error(`HTTP Error: ${res.status}`);
+        }
+        return res.json();
+    })
     .then(result => {
         if (result.status === "success") {
-            alert("Data berhasil disimpan!");
+            messageElement.textContent = "✅ Data berhasil disimpan!";
+            // Opsional: Reset formulir setelah sukses
+            document.getElementById("oeeForm").reset();
         } else {
-            alert("Gagal: " + result.message);
+            messageElement.textContent = "❌ Gagal: " + result.message;
         }
     })
     .catch(err => {
-        alert("Error: " + err);
+        messageElement.textContent = `🚨 Error Koneksi: ${err.message}. Periksa URL Web App atau kode Apps Script Anda.`;
+        console.error("Kesalahan:", err);
     });
 }
 
@@ -2813,6 +2835,7 @@ Data telah tersimpan di Google Sheets Anda! 🎉`);
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa871e3b3616d10',t:'MTc2NTE1Njg3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
 
 
 
