@@ -2703,7 +2703,188 @@ Data telah tersimpan di Google Sheets Anda! 🎉`);
       }
     }
 
+   function collectFormData() {
+    const activityRows = [];
+    const tableBody = document.getElementById('activityTableBody');
+    const rows = tableBody.getElementsByTagName('tr');
+
+    // Kumpulkan data dari baris aktivitas
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const inputs = row.querySelectorAll('input, select');
+        
+        // Asumsi urutan kolom sesuai urutan input/select di baris
+        // NO (i+1), KODE KEGIATAN, JUMLAH TKL, DARI, SAMPAI, DURASI, AKTIVITAS (text/select), DISPOSISI, SCHEDULE, BATCH NUMBER, GOOD OUTPUT, AFKIR, LINESTOP MESIN, LINESTOP NON MESIN, JAM KERJA, ODT, JAM KERJA AKTUAL, JAM KERJA TARGET, OUTPUT AKTUAL, OUTPUT TARGET, OUTPUT TARGET 365, BATCH, SATUAN, KETERANGAN, MINORSTOP, AKSI (button)
+        // Sesuaikan indeks [j] sesuai urutan input/select di baris <tr> Anda
+        const activityData = {
+            no: i + 1,
+            kodeKegiatan: inputs[0] ? inputs[0].value : '', // KODE KEGIATAN (select)
+            jumlahTKL: inputs[1] ? inputs[1].value : '', // JUMLAH TKL
+            dari: inputs[2] ? inputs[2].value : '', // DARI
+            sampai: inputs[3] ? inputs[3].value : '', // SAMPAI
+            durasi: inputs[4] ? inputs[4].value : '', // DURASI
+            aktivitas: inputs[5] ? inputs[5].value : '', // AKTIVITAS (select/input)
+            disposisi: inputs[6] ? inputs[6].value : '', // DISPOSISI
+            schedule: inputs[7] ? inputs[7].value : '', // SCHEDULE
+            batchnumber: inputs[8] ? inputs[8].value : '', // BATCH NUMBER
+            goodoutput: inputs[9] ? inputs[9].value : '', // GOOD OUTPUT
+            afkir: inputs[10] ? inputs[10].value : '', // AFKIR
+            linestopMesin: inputs[11] ? inputs[11].value : '', // LINESTOP MESIN
+            linestopNonMesin: inputs[12] ? inputs[12].value : '', // LINESTOP NON MESIN
+            jamKerja: inputs[13] ? inputs[13].value : '', // JAM KERJA
+            odt: inputs[14] ? inputs[14].value : '', // ODT
+            jamKerjaAktual: inputs[15] ? inputs[15].value : '', // JAM KERJA AKTUAL
+            jamKerjaTarget: inputs[16] ? inputs[16].value : '', // JAM KERJA TARGET
+            outputAktual: inputs[17] ? inputs[17].value : '', // OUTPUT AKTUAL
+            outputTargetHasil: inputs[18] ? inputs[18].value : '', // OUTPUT TARGET HASIL
+            outputTarget365: inputs[19] ? inputs[19].value : '', // OUTPUT TARGET 365
+            batch: inputs[20] ? inputs[20].value : '', // BATCH
+            satuan: inputs[21] ? inputs[21].value : '', // SATUAN
+            keterangan: inputs[22] ? inputs[22].value : '', // KETERANGAN
+            minorstop: inputs[23] ? inputs[23].value : '', // MINORSTOP
+            // Kolom Aksi diabaikan karena hanya tombol
+        };
+        activityRows.push(activityData);
+    }
+    
+    // Kumpulkan data utama
+    const allData = {
+        tanggal: document.getElementById('tanggal').value,
+        line: document.getElementById('line').value,
+        jenisMesin: document.getElementById('jenisMesin').value,
+        shift: document.getElementById('shift').value,
+        operator: document.getElementById('operator').value,
+        speed: document.getElementById('speed').value,
+        activities: activityRows
+    };
+
+    return allData;
+}
+
+   // Pastikan fungsi-fungsi lain yang sudah ada (seperti addActivityRow, toggleColumn, dll.) 
+    // tetap dipertahankan jika Anda menempelkan ini di tengah kode script Anda.
+
+    // =================================================================
+    // ⚠️ PENTING: GANTI URL DI BAWAH INI dengan URL Web App Anda
+    const WEB_APP_URL = 'PASTE_URL_WEB_APP_ANDA_DI_SINI'; 
+    // Contoh: 'https://script.google.com/macros/s/AKfycbyf23823jfg90248/exec';
+    // =================================================================
+
+    // Fungsi untuk mengumpulkan semua data dari formulir utama dan tabel aktivitas
+    function collectFormData() {
+        const activityRows = [];
+        const tableBody = document.getElementById('activityTableBody');
+        const rows = tableBody.getElementsByTagName('tr');
+
+        // Mengumpulkan data dari baris aktivitas
+        for (let i = 0; i < rows.length; i++) {
+            const row = rows[i];
+            
+            // Mengambil semua input/select di baris ini
+            // ⚠️ PERHATIKAN URUTAN INDEKS INI HARUS SAMA DENGAN URUTAN INPUT DI FUNGSI addActivityRow()
+            const inputs = row.querySelectorAll('input, select'); 
+            
+            const activityData = {
+                no: i + 1,
+                kodeKegiatan: inputs[0] ? inputs[0].value : '', 
+                jumlahTKL: inputs[1] ? inputs[1].value : '', 
+                dari: inputs[2] ? inputs[2].value : '', 
+                sampai: inputs[3] ? inputs[3].value : '', 
+                durasi: inputs[4] ? inputs[4].value : '', 
+                aktivitas: inputs[5] ? inputs[5].value : '', 
+                disposisi: inputs[6] ? inputs[6].value : '', 
+                schedule: inputs[7] ? inputs[7].value : '', 
+                batchnumber: inputs[8] ? inputs[8].value : '', 
+                goodoutput: inputs[9] ? inputs[9].value : '', 
+                afkir: inputs[10] ? inputs[10].value : '', 
+                linestopMesin: inputs[11] ? inputs[11].value : '', 
+                linestopNonMesin: inputs[12] ? inputs[12].value : '', 
+                jamKerja: inputs[13] ? inputs[13].value : '', 
+                odt: inputs[14] ? inputs[14].value : '', 
+                jamKerjaAktual: inputs[15] ? inputs[15].value : '', 
+                jamKerjaTarget: inputs[16] ? inputs[16].value : '', 
+                outputAktual: inputs[17] ? inputs[17].value : '', 
+                outputTargetHasil: inputs[18] ? inputs[18].value : '', 
+                outputTarget365: inputs[19] ? inputs[19].value : '', 
+                batch: inputs[20] ? inputs[20].value : '', 
+                satuan: inputs[21] ? inputs[21].value : '', 
+                keterangan: inputs[22] ? inputs[22].value : '', 
+                minorstop: inputs[23] ? inputs[23].value : '', 
+            };
+            activityRows.push(activityData);
+        }
+        
+        // Mengumpulkan data utama formulir
+        const allData = {
+            tanggal: document.getElementById('tanggal').value,
+            line: document.getElementById('line').value,
+            jenisMesin: document.getElementById('jenisMesin').value,
+            shift: document.getElementById('shift').value,
+            operator: document.getElementById('operator').value,
+            speed: document.getElementById('speed').value,
+            activities: activityRows
+        };
+
+        return allData;
+    }
+
+    // Fungsi utama untuk menyimpan data ke Google Sheets
+    async function saveData() {
+        const dataToSend = collectFormData();
+
+        if (WEB_APP_URL === 'https://script.google.com/macros/s/AKfycbwPN6o6Ab0tujHgY_eCW2TEe1642s7Sum-Pz1fambvF5ThFq4GGIYl6lCoONMBPCHbs/exec') {
+             alert('❌ Gagal: Harap ganti variabel WEB_APP_URL dengan URL Web App Apps Script Anda di kode HTML/JavaScript.');
+             return;
+        }
+
+        if (!dataToSend.tanggal || !dataToSend.line || dataToSend.activities.length === 0) {
+            alert('⚠️ Harap isi Tanggal, Line Mesin, dan tambahkan setidaknya satu baris Aktivitas sebelum menyimpan.');
+            return;
+        }
+        
+        // Ambil tombol Simpan
+        const saveButton = document.querySelector('button[onclick="saveData()"]');
+        
+        try {
+            // Tampilkan loading/disable tombol
+            saveButton.disabled = true;
+            saveButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
+
+            // Kirim data menggunakan Fetch API
+            const response = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                mode: 'cors',
+                headers: {
+                    // Apps Script biasanya menerima 'text/plain' untuk data JSON yang dikirimkan
+                    'Content-Type': 'text/plain', 
+                },
+                body: JSON.stringify(dataToSend),
+            });
+
+            // Baca respons sebagai teks, lalu parse sebagai JSON
+            const text = await response.text();
+            const result = JSON.parse(text); 
+
+            if (result.result === 'success') {
+                alert('✅ Data berhasil disimpan ke Google Sheets!');
+                // Tambahkan panggilan fungsi reset/clear form di sini jika diperlukan
+                // Contoh: clearForm();
+            } else {
+                console.error('Error dari Apps Script:', result.message);
+                alert(`❌ Gagal menyimpan data: ${result.message}`);
+            }
+        } catch (error) {
+            console.error('Terjadi kesalahan saat koneksi/parsing:', error);
+            alert('❌ Terjadi kesalahan koneksi atau format data. Cek Console Log untuk detail.');
+        } finally {
+            // Kembalikan tombol ke keadaan semula
+            saveButton.disabled = false;
+            saveButton.innerHTML = '<i class="fas fa-save"></i> Simpan Data';
+        }
+    }
+
 
   </script>
  <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9aa871e3b3616d10',t:'MTc2NTE1Njg3NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
+
